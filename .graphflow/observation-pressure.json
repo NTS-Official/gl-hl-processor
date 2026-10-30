@@ -1,0 +1,12 @@
+{
+  "sessions": {
+    "session-3d88cd34-169b-41e1-889b-c60ca22b2d08": {
+      "sessionId": "session-3d88cd34-169b-41e1-889b-c60ca22b2d08",
+      "rawBytes": 676083,
+      "visibleBytes": 560242,
+      "observations": 463,
+      "usedTokensEstimate": 140061,
+      "updatedAt": "2026-10-30T04:42:18.028Z"
+    }
+  }
+}

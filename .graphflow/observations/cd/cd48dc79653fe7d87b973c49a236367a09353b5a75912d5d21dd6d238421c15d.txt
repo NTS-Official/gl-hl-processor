@@ -1,0 +1,156 @@
+
+> src\hlsl\emitter.zig:617:            .switch_stmt => |switch_stmt| {
+  src\hlsl\emitter.zig:618:                try self.code.write("switch (");
+  src\hlsl\emitter.zig:619:                try self.emitExprPrec(switch_stmt.expression, 0);
+  src\hlsl\emitter.zig:620:                try self.code.line(")");
+  src\hlsl\emitter.zig:621:                try self.emitBranch(switch_stmt.body);
+  src\hlsl\emitter.zig:622:            },
+  src\hlsl\emitter.zig:623:            .return_stmt => |return_stmt| {
+  src\hlsl\emitter.zig:624:                if (self.in_entry) {
+  src\hlsl\emitter.zig:625:                    if (return_stmt.value != null) {
+  src\hlsl\emitter.zig:626:                        return self.fail(return_stmt.line, 1, "'main' must not return a valu
+e", .{});
+  src\hlsl\emitter.zig:627:                    }
+  src\hlsl\emitter.zig:628:                    if (self.outputs.items.len > 0) {
+  src\hlsl\emitter.zig:629:                        try self.code.line("return output;");
+  src\hlsl\emitter.zig:630:                    } else {
+  src\hlsl\emitter.zig:631:                        try self.code.line("return;");
+  src\hlsl\emitter.zig:632:                    }
+  src\hlsl\emitter.zig:633:                } else if (return_stmt.value) |value| {
+  src\hlsl\emitter.zig:634:                    try self.code.write("return ");
+  src\hlsl\emitter.zig:635:                    try self.emitExprPrec(value, 0);
+  src\hlsl\emitter.zig:636:                    try self.code.line(";");
+  src\hlsl\emitter.zig:637:                } else {
+  src\hlsl\emitter.zig:638:                    try self.code.line("return;");
+  src\hlsl\emitter.zig:639:                }
+  src\hlsl\emitter.zig:640:            },
+  src\hlsl\emitter.zig:641:            .break_stmt => try self.code.line("break;"),
+  src\hlsl\emitter.zig:642:            .continue_stmt => try self.code.line("continue;"),
+> src\hlsl\emitter.zig:1349:            .switch_stmt => |s| {
+  src\hlsl\emitter.zig:1350:                try self.scanExpr(s.expression);
+  src\hlsl\emitter.zig:1351:                try self.scanStmt(s.body);
+  src\hlsl\emitter.zig:1352:            },
+  src\hlsl\emitter.zig:1353:            .return_stmt => |s| if (s.value) |value| try self.scanExpr(value),
+  src\hlsl\emitter.zig:1354:            .case_label => |s| try self.scanExpr(s.value),
+  src\hlsl\emitter.zig:1355:            .discard_stmt => self.use.discard = true,
+  src\hlsl\emitter.zig:1356:            else => {},
+  src\hlsl\emitter.zig:1357:        }
+  src\hlsl\emitter.zig:1358:    }
+  src\hlsl\emitter.zig:1359:
+  src\hlsl\emitter.zig:1360:    fn scanExpr(self: *Emitter, expression: *ast.Expr) Error!void {
+  src\hlsl\emitter.zig:1361:        switch (expression.*) {
+  src\hlsl\emitter.zig:1362:            .identifier => |ident| {
+  src\hlsl\emitter.zig:1363:                if (std.mem.eql(u8, ident.name, "gl_Position")) self.use.gl_position = true
+;
+  src\hlsl\emitter.zig:1364:                if (std.mem.eql(u8, ident.name, "gl_FragCoord")) self.use.gl_frag_coord = t
+rue;
+  src\hlsl\emitter.zig:1365:                if (std.mem.eql(u8, ident.name, "gl_FrontFacing")) self.use.gl_front_facing
+ = true;
+  src\hlsl\emitter.zig:1366:                if (std.mem.eql(u8, ident.name, "gl_VertexID")) self.use.gl_vertex_id = tru
+e;
+  src\hlsl\emitter.zig:1367:                if (std.mem.eql(u8, ident.name, "gl_InstanceID")) self.use.gl_instance_id =
+ true;
+  src\hlsl\emitter.zig:1368:                if (std.mem.eql(u8, ident.name, "gl_FragDepth")) self.use.gl_frag_depth = t
+rue;
+  src\hlsl\emitter.zig:1369:                if (std.mem.eql(u8, ident.name, "gl_FragColor")) self.use.gl_frag_color = t
+rue;
+  src\hlsl\emitter.zig:1370:            },
+  src\hlsl\emitter.zig:1371:            .unary => |unary| try self.scanExpr(unary.operand),
+  src\hlsl\emitter.zig:1372:            .postfix => |postfix| try self.scanExpr(postfix.operand),
+  src\hlsl\emitter.zig:1373:            .binary => |binary| {
+  src\hlsl\emitter.zig:1374:                try self.scanExpr(binary.left);
+> src\hlsl\emitter.zig:1426:            .switch_stmt => |s| exprUsesBuiltin(s.expression) or self.stmtUsesBuiltin(s.bod
+y),
+  src\hlsl\emitter.zig:1427:            .return_stmt => |s| s.value != null and exprUsesBuiltin(s.value.?),
+  src\hlsl\emitter.zig:1428:            .case_label => |s| exprUsesBuiltin(s.value),
+  src\hlsl\emitter.zig:1429:            else => false,
+  src\hlsl\emitter.zig:1430:        };
+  src\hlsl\emitter.zig:1431:    }
+  src\hlsl\emitter.zig:1432:
+  src\hlsl\emitter.zig:1433:    fn stmtUsesName(self: *Emitter, statement: *ast.Stmt, name: []const u8) bool {
+  src\hlsl\emitter.zig:1434:        _ = self;
+  src\hlsl\emitter.zig:1435:        return stmtReferencesName(statement, name);
+  src\hlsl\emitter.zig:1436:    }
+  src\hlsl\emitter.zig:1437:
+  src\hlsl\emitter.zig:1438:    fn fail(self: *Emitter, line: u32, column: u32, comptime fmt: []const u8, args: anytype
+) Error {
+  src\hlsl\emitter.zig:1439:        try self.diagnostics.errFmt(line, column, fmt, args);
+  src\hlsl\emitter.zig:1440:        return error.InvalidShader;
+  src\hlsl\emitter.zig:1441:    }
+  src\hlsl\emitter.zig:1442:};
+  src\hlsl\emitter.zig:1443:
+  src\hlsl\emitter.zig:1444:fn stmtReferencesName(statement: *ast.Stmt, name: []const u8) bool {
+  src\hlsl\emitter.zig:1445:    return switch (statement.*) {
+  src\hlsl\emitter.zig:1446:        .block => |block| blk: {
+  src\hlsl\emitter.zig:1447:            for (block.statements) |child| if (stmtReferencesName(child, name)) break :blk 
+true;
+  src\hlsl\emitter.zig:1448:            break :blk false;
+  src\hlsl\emitter.zig:1449:        },
+  src\hlsl\emitter.zig:1450:        .expr => |expression| exprReferencesName(expression, name),
+  src\hlsl\emitter.zig:1451:        .decl => |variables| blk: {
+> src\hlsl\emitter.zig:1467:        .switch_stmt => |s| exprReferencesName(s.expression, name) or stmtReferencesName(s.
+body, name),
+  src\hlsl\emitter.zig:1468:        .return_stmt => |s| s.value != null and exprReferencesName(s.value.?, name),
+  src\hlsl\emitter.zig:1469:        .case_label => |s| exprReferencesName(s.value, name),
+  src\hlsl\emitter.zig:1470:        else => false,
+  src\hlsl\emitter.zig:1471:    };
+  src\hlsl\emitter.zig:1472:}
+  src\hlsl\emitter.zig:1473:
+  src\hlsl\emitter.zig:1474:fn exprReferencesName(expression: *ast.Expr, name: []const u8) bool {
+  src\hlsl\emitter.zig:1475:    return switch (expression.*) {
+  src\hlsl\emitter.zig:1476:        .identifier => |ident| std.mem.eql(u8, ident.name, name),
+  src\hlsl\emitter.zig:1477:        .unary => |unary| exprReferencesName(unary.operand, name),
+  src\hlsl\emitter.zig:1478:        .postfix => |postfix| exprReferencesName(postfix.operand, name),
+  src\hlsl\emitter.zig:1479:        .binary => |binary| exprReferencesName(binary.left, name) or exprReferencesName(bin
+ary.right, name),
+  src\hlsl\emitter.zig:1480:        .assign => |assign| exprReferencesName(assign.target, name) or exprReferencesName(a
+ssign.value, name),
+  src\hlsl\emitter.zig:1481:        .ternary => |ternary| exprReferencesName(ternary.condition, name) or
+  src\hlsl\emitter.zig:1482:            exprReferencesName(ternary.then_expr, name) or exprReferencesName(ternary.else_
+expr, name),
+  src\hlsl\emitter.zig:1483:        .call => |call| blk: {
+  src\hlsl\emitter.zig:1484:            for (call.args) |arg| if (exprReferencesName(arg, name)) break :blk true;
+  src\hlsl\emitter.zig:1485:            break :blk false;
+  src\hlsl\emitter.zig:1486:        },
+  src\hlsl\emitter.zig:1487:        .member => |member| exprReferencesName(member.base, name),
+  src\hlsl\emitter.zig:1488:        .index => |index| exprReferencesName(index.base, name) or exprReferencesName(index.
+index, name),
+  src\hlsl\emitter.zig:1489:        .comma => |comma| exprReferencesName(comma.left, name) or exprReferencesName(comma.
+right, name),
+  src\hlsl\emitter.zig:1490:        else => false,
+  src\hlsl\emitter.zig:1491:    };
+  src\hlsl\emitter.zig:1492:}
+> src\hlsl\emitter.zig:1777:            .switch_stmt => |s| {
+  src\hlsl\emitter.zig:1778:                try self.scanExpr(s.expression);
+  src\hlsl\emitter.zig:1779:                try self.scanStmt(s.body);
+  src\hlsl\emitter.zig:1780:            },
+  src\hlsl\emitter.zig:1781:            .return_stmt => |s| if (s.value) |value| try self.scanExpr(value),
+  src\hlsl\emitter.zig:1782:            .case_label => |s| try self.scanExpr(s.value),
+  src\hlsl\emitter.zig:1783:            .discard_stmt => self.use.discard = true,
+  src\hlsl\emitter.zig:1784:            else => {},
+  src\hlsl\emitter.zig:1785:        }
+  src\hlsl\emitter.zig:1786:    }
+  src\hlsl\emitter.zig:1787:
+  src\hlsl\emitter.zig:1788:    fn scanExpr(self: *BuiltinScanner, expression: *ast.Expr) Error!void {
+  src\hlsl\emitter.zig:1789:        switch (expression.*) {
+  src\hlsl\emitter.zig:1790:            .identifier => |ident| {
+  src\hlsl\emitter.zig:1791:                if (std.mem.eql(u8, ident.name, "gl_Position")) self.use.gl_position = true
+;
+  src\hlsl\emitter.zig:1792:                if (std.mem.eql(u8, ident.name, "gl_FragCoord")) self.use.gl_frag_coord = t
+rue;
+  src\hlsl\emitter.zig:1793:                if (std.mem.eql(u8, ident.name, "gl_FrontFacing")) self.use.gl_front_facing
+ = true;
+  src\hlsl\emitter.zig:1794:                if (std.mem.eql(u8, ident.name, "gl_VertexID")) self.use.gl_vertex_id = tru
+e;
+  src\hlsl\emitter.zig:1795:                if (std.mem.eql(u8, ident.name, "gl_InstanceID")) self.use.gl_instance_id =
+ true;
+  src\hlsl\emitter.zig:1796:                if (std.mem.eql(u8, ident.name, "gl_FragDepth")) self.use.gl_frag_depth = t
+rue;
+  src\hlsl\emitter.zig:1797:                if (std.mem.eql(u8, ident.name, "gl_FragColor")) self.use.gl_frag_color = t
+rue;
+  src\hlsl\emitter.zig:1798:            },
+  src\hlsl\emitter.zig:1799:            .unary => |unary| try self.scanExpr(unary.operand),
+  src\hlsl\emitter.zig:1800:            .postfix => |postfix| try self.scanExpr(postfix.operand),
+  src\hlsl\emitter.zig:1801:            .binary => |binary| {
+  src\hlsl\emitter.zig:1802:                try self.scanExpr(binary.left);
+

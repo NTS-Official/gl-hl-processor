@@ -1,0 +1,31 @@
+{
+  "totalRuns": 0,
+  "totalRawTokens": 0,
+  "totalCompressedTokens": 0,
+  "totalSavedTokens": 0,
+  "averageSavingsPercent": 0,
+  "firstRunAt": null,
+  "lastRunAt": null,
+  "records": [
+    {
+      "timestamp": "2026-10-30T03:56:29.619Z",
+      "query": "glsl to hlsl converter zig project structure",
+      "rawTokens": 431,
+      "compressedTokens": 431,
+      "savingsPercent": 0,
+      "source": "preview_context",
+      "kind": "tokens-not-fidelity"
+    }
+  ],
+  "recentRecords": [
+    {
+      "timestamp": "2026-10-30T03:56:29.619Z",
+      "query": "glsl to hlsl converter zig project structure",
+      "rawTokens": 431,
+      "compressedTokens": 431,
+      "savingsPercent": 0,
+      "source": "preview_context",
+      "kind": "tokens-not-fidelity"
+    }
+  ]
+}

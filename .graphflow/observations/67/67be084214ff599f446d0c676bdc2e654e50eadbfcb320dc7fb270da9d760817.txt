@@ -1,0 +1,178 @@
+
+> src\hlsl\emitter.zig:758:            .identifier => |ident| {
+  src\hlsl\emitter.zig:759:                if (try self.builtinText(ident.name, ident.line, ident.column)) |text| {
+  src\hlsl\emitter.zig:760:                    try self.code.write(text);
+  src\hlsl\emitter.zig:761:                    return;
+  src\hlsl\emitter.zig:762:                }
+  src\hlsl\emitter.zig:763:                if (self.findLocal(ident.name) != null) {
+  src\hlsl\emitter.zig:764:                    try self.code.write(ident.name);
+  src\hlsl\emitter.zig:765:                    return;
+  src\hlsl\emitter.zig:766:                }
+  src\hlsl\emitter.zig:767:                if (self.findGlobal(ident.name)) |global| {
+  src\hlsl\emitter.zig:768:                    switch (global.kind) {
+  src\hlsl\emitter.zig:769:                        .stage_in => try self.code.print("input.{s}", .{ident.name}),
+  src\hlsl\emitter.zig:770:                        .stage_out => try self.code.print("output.{s}", .{ident.name}),
+  src\hlsl\emitter.zig:771:                        else => try self.code.write(ident.name),
+  src\hlsl\emitter.zig:772:                    }
+  src\hlsl\emitter.zig:773:                    return;
+  src\hlsl\emitter.zig:774:                }
+  src\hlsl\emitter.zig:775:                if (std.mem.eql(u8, ident.name, "gl_FragData")) {
+  src\hlsl\emitter.zig:776:                    return self.fail(ident.line, ident.column, "gl_FragData is not supported
+", .{});
+> src\hlsl\emitter.zig:1146:            .identifier => |ident| ident.name,
+  src\hlsl\emitter.zig:1147:            else => return self.fail(call.line, call.column, "texture lookup requires a sam
+pler identifier", .{}),
+  src\hlsl\emitter.zig:1148:        };
+  src\hlsl\emitter.zig:1149:        if (intrinsic == .texture_grad and self.stage == .vertex) {
+  src\hlsl\emitter.zig:1150:            return self.fail(call.line, call.column, "textureGrad is not supported in verte
+x shaders", .{});
+  src\hlsl\emitter.zig:1151:        }
+  src\hlsl\emitter.zig:1152:        const force_level = intrinsic == .texture and self.stage == .vertex;
+  src\hlsl\emitter.zig:1153:        const method = if (force_level) "SampleLevel" else builtins.hlslName(intrinsic);
+  src\hlsl\emitter.zig:1154:        try self.code.print("{s}.{s}({s}_sampler", .{ object, method, object });
+  src\hlsl\emitter.zig:1155:        for (call.args[1..]) |arg| {
+  src\hlsl\emitter.zig:1156:            try self.code.write(", ");
+  src\hlsl\emitter.zig:1157:            try self.emitExprPrec(arg, 1);
+  src\hlsl\emitter.zig:1158:        }
+  src\hlsl\emitter.zig:1159:        if (force_level) try self.code.write(", 0.0");
+  src\hlsl\emitter.zig:1160:        try self.code.write(")");
+  src\hlsl\emitter.zig:1161:    }
+  src\hlsl\emitter.zig:1162:
+  src\hlsl\emitter.zig:1163:    fn emitTexelFetch(self: *Emitter, call: ast.Call) Error!void {
+  src\hlsl\emitter.zig:1164:        if (call.args.len != 3) {
+> src\hlsl\emitter.zig:1170:            .identifier => |ident| ident.name,
+  src\hlsl\emitter.zig:1171:            else => return self.fail(call.line, call.column, "texelFetch requires a sampler
+ identifier", .{}),
+  src\hlsl\emitter.zig:1172:        };
+  src\hlsl\emitter.zig:1173:        try self.code.print("{s}.Load(", .{object});
+  src\hlsl\emitter.zig:1174:        if (sampler_kind.isBuffer()) {
+  src\hlsl\emitter.zig:1175:            try self.emitExprPrec(call.args[1], 1);
+  src\hlsl\emitter.zig:1176:        } else {
+  src\hlsl\emitter.zig:1177:            const dims = sampler_kind.coordDims();
+  src\hlsl\emitter.zig:1178:            const width = if (sampler_kind.isArray()) dims + 1 else dims;
+  src\hlsl\emitter.zig:1179:            const vector_len = width + 1;
+  src\hlsl\emitter.zig:1180:            try self.code.print("int{d}(", .{vector_len});
+  src\hlsl\emitter.zig:1181:            try self.emitExprPrec(call.args[1], 1);
+  src\hlsl\emitter.zig:1182:            try self.code.write(", ");
+  src\hlsl\emitter.zig:1183:            try self.emitExprPrec(call.args[2], 1);
+  src\hlsl\emitter.zig:1184:            try self.code.write(")");
+  src\hlsl\emitter.zig:1185:        }
+  src\hlsl\emitter.zig:1186:        try self.code.write(")");
+  src\hlsl\emitter.zig:1187:    }
+  src\hlsl\emitter.zig:1188:
+> src\hlsl\emitter.zig:1220:            .identifier => |ident| {
+  src\hlsl\emitter.zig:1221:                if (self.findLocal(ident.name)) |local| return local.typ;
+  src\hlsl\emitter.zig:1222:                if (self.findGlobal(ident.name)) |global| return global.typ;
+  src\hlsl\emitter.zig:1223:                if (builtinType(ident.name)) |typ| return typ;
+  src\hlsl\emitter.zig:1224:                return unknown;
+  src\hlsl\emitter.zig:1225:            },
+  src\hlsl\emitter.zig:1226:            .unary => |unary| return self.typeOf(unary.operand),
+  src\hlsl\emitter.zig:1227:            .postfix => |postfix| return self.typeOf(postfix.operand),
+  src\hlsl\emitter.zig:1228:            .binary => |binary| return self.binaryType(binary),
+  src\hlsl\emitter.zig:1229:            .assign => |assign| return self.typeOf(assign.target),
+  src\hlsl\emitter.zig:1230:            .ternary => |ternary| return self.typeOf(ternary.then_expr),
+  src\hlsl\emitter.zig:1231:            .call => |call| return self.callType(call),
+  src\hlsl\emitter.zig:1232:            .member => |member| return self.memberType(member),
+  src\hlsl\emitter.zig:1233:            .index => |index| return self.indexType(index),
+  src\hlsl\emitter.zig:1234:            .comma => |comma| return self.typeOf(comma.right),
+  src\hlsl\emitter.zig:1235:        }
+  src\hlsl\emitter.zig:1236:    }
+  src\hlsl\emitter.zig:1237:
+  src\hlsl\emitter.zig:1238:    fn binaryType(self: *Emitter, binary: ast.Binary) types.Type {
+> src\hlsl\emitter.zig:1459:            .identifier => |ident| {
+  src\hlsl\emitter.zig:1460:                if (std.mem.eql(u8, ident.name, "gl_Position")) self.use.gl_position = true
+;
+  src\hlsl\emitter.zig:1461:                if (std.mem.eql(u8, ident.name, "gl_FragCoord")) self.use.gl_frag_coord = t
+rue;
+  src\hlsl\emitter.zig:1462:                if (std.mem.eql(u8, ident.name, "gl_FrontFacing")) self.use.gl_front_facing
+ = true;
+  src\hlsl\emitter.zig:1463:                if (std.mem.eql(u8, ident.name, "gl_VertexID")) self.use.gl_vertex_id = tru
+e;
+  src\hlsl\emitter.zig:1464:                if (std.mem.eql(u8, ident.name, "gl_InstanceID")) self.use.gl_instance_id =
+ true;
+  src\hlsl\emitter.zig:1465:                if (std.mem.eql(u8, ident.name, "gl_FragDepth")) self.use.gl_frag_depth = t
+rue;
+  src\hlsl\emitter.zig:1466:                if (std.mem.eql(u8, ident.name, "gl_FragColor")) self.use.gl_frag_color = t
+rue;
+  src\hlsl\emitter.zig:1467:            },
+  src\hlsl\emitter.zig:1468:            .unary => |unary| try self.scanExpr(unary.operand),
+  src\hlsl\emitter.zig:1469:            .postfix => |postfix| try self.scanExpr(postfix.operand),
+  src\hlsl\emitter.zig:1470:            .binary => |binary| {
+  src\hlsl\emitter.zig:1471:                try self.scanExpr(binary.left);
+  src\hlsl\emitter.zig:1472:                try self.scanExpr(binary.right);
+  src\hlsl\emitter.zig:1473:            },
+  src\hlsl\emitter.zig:1474:            .assign => |assign| {
+  src\hlsl\emitter.zig:1475:                try self.scanExpr(assign.target);
+  src\hlsl\emitter.zig:1476:                try self.scanExpr(assign.value);
+  src\hlsl\emitter.zig:1477:            },
+> src\hlsl\emitter.zig:1573:        .identifier => |ident| std.mem.eql(u8, ident.name, name),
+  src\hlsl\emitter.zig:1574:        .unary => |unary| exprReferencesName(unary.operand, name),
+  src\hlsl\emitter.zig:1575:        .postfix => |postfix| exprReferencesName(postfix.operand, name),
+  src\hlsl\emitter.zig:1576:        .binary => |binary| exprReferencesName(binary.left, name) or exprReferencesName(bin
+ary.right, name),
+  src\hlsl\emitter.zig:1577:        .assign => |assign| exprReferencesName(assign.target, name) or exprReferencesName(a
+ssign.value, name),
+  src\hlsl\emitter.zig:1578:        .ternary => |ternary| exprReferencesName(ternary.condition, name) or
+  src\hlsl\emitter.zig:1579:            exprReferencesName(ternary.then_expr, name) or exprReferencesName(ternary.else_
+expr, name),
+  src\hlsl\emitter.zig:1580:        .call => |call| blk: {
+  src\hlsl\emitter.zig:1581:            for (call.args) |arg| if (exprReferencesName(arg, name)) break :blk true;
+  src\hlsl\emitter.zig:1582:            break :blk false;
+  src\hlsl\emitter.zig:1583:        },
+  src\hlsl\emitter.zig:1584:        .member => |member| exprReferencesName(member.base, name),
+  src\hlsl\emitter.zig:1585:        .index => |index| exprReferencesName(index.base, name) or exprReferencesName(index.
+index, name),
+  src\hlsl\emitter.zig:1586:        .comma => |comma| exprReferencesName(comma.left, name) or exprReferencesName(comma.
+right, name),
+  src\hlsl\emitter.zig:1587:        else => false,
+  src\hlsl\emitter.zig:1588:    };
+  src\hlsl\emitter.zig:1589:}
+  src\hlsl\emitter.zig:1590:
+  src\hlsl\emitter.zig:1591:fn exprUsesBuiltin(expression: *ast.Expr) bool {
+> src\hlsl\emitter.zig:1593:        .identifier => |ident| isStageBuiltin(ident.name),
+  src\hlsl\emitter.zig:1594:        .unary => |unary| exprUsesBuiltin(unary.operand),
+  src\hlsl\emitter.zig:1595:        .postfix => |postfix| exprUsesBuiltin(postfix.operand),
+  src\hlsl\emitter.zig:1596:        .binary => |binary| exprUsesBuiltin(binary.left) or exprUsesBuiltin(binary.right),
+  src\hlsl\emitter.zig:1597:        .assign => |assign| exprUsesBuiltin(assign.target) or exprUsesBuiltin(assign.value)
+,
+  src\hlsl\emitter.zig:1598:        .ternary => |ternary| exprUsesBuiltin(ternary.condition) or
+  src\hlsl\emitter.zig:1599:            exprUsesBuiltin(ternary.then_expr) or exprUsesBuiltin(ternary.else_expr),
+  src\hlsl\emitter.zig:1600:        .call => |call| blk: {
+  src\hlsl\emitter.zig:1601:            for (call.args) |arg| if (exprUsesBuiltin(arg)) break :blk true;
+  src\hlsl\emitter.zig:1602:            break :blk false;
+  src\hlsl\emitter.zig:1603:        },
+  src\hlsl\emitter.zig:1604:        .member => |member| exprUsesBuiltin(member.base),
+  src\hlsl\emitter.zig:1605:        .index => |index| exprUsesBuiltin(index.base) or exprUsesBuiltin(index.index),
+  src\hlsl\emitter.zig:1606:        .comma => |comma| exprUsesBuiltin(comma.left) or exprUsesBuiltin(comma.right),
+  src\hlsl\emitter.zig:1607:        else => false,
+  src\hlsl\emitter.zig:1608:    };
+  src\hlsl\emitter.zig:1609:}
+  src\hlsl\emitter.zig:1610:
+  src\hlsl\emitter.zig:1611:fn isStageBuiltin(name: []const u8) bool {
+> src\hlsl\emitter.zig:1900:            .identifier => |ident| {
+  src\hlsl\emitter.zig:1901:                if (std.mem.eql(u8, ident.name, "gl_Position")) self.use.gl_position = true
+;
+  src\hlsl\emitter.zig:1902:                if (std.mem.eql(u8, ident.name, "gl_FragCoord")) self.use.gl_frag_coord = t
+rue;
+  src\hlsl\emitter.zig:1903:                if (std.mem.eql(u8, ident.name, "gl_FrontFacing")) self.use.gl_front_facing
+ = true;
+  src\hlsl\emitter.zig:1904:                if (std.mem.eql(u8, ident.name, "gl_VertexID")) self.use.gl_vertex_id = tru
+e;
+  src\hlsl\emitter.zig:1905:                if (std.mem.eql(u8, ident.name, "gl_InstanceID")) self.use.gl_instance_id =
+ true;
+  src\hlsl\emitter.zig:1906:                if (std.mem.eql(u8, ident.name, "gl_FragDepth")) self.use.gl_frag_depth = t
+rue;
+  src\hlsl\emitter.zig:1907:                if (std.mem.eql(u8, ident.name, "gl_FragColor")) self.use.gl_frag_color = t
+rue;
+  src\hlsl\emitter.zig:1908:            },
+  src\hlsl\emitter.zig:1909:            .unary => |unary| try self.scanExpr(unary.operand),
+  src\hlsl\emitter.zig:1910:            .postfix => |postfix| try self.scanExpr(postfix.operand),
+  src\hlsl\emitter.zig:1911:            .binary => |binary| {
+  src\hlsl\emitter.zig:1912:                try self.scanExpr(binary.left);
+  src\hlsl\emitter.zig:1913:                try self.scanExpr(binary.right);
+  src\hlsl\emitter.zig:1914:            },
+  src\hlsl\emitter.zig:1915:            .assign => |assign| {
+  src\hlsl\emitter.zig:1916:                try self.scanExpr(assign.target);
+  src\hlsl\emitter.zig:1917:                try self.scanExpr(assign.value);
+  src\hlsl\emitter.zig:1918:            },
+

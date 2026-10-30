@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "id": "dialogue-session:1skb02e",
+      "type": "Decision",
+      "content": "dialogue-session session-3d88cd34-169b-41e1-889b-c60ca22b2d08 turns=3 tip=dialogue:1skb02e:0003",
+      "metadata": {
+        "kind": "dialogue-session",
+        "record": "{\"id\":\"dialogue-session:1skb02e\",\"name\":\"session-3d88cd34-169b-41e1-889b-c60ca22b2d08\",\"tipTurnId\":\"dialogue:1skb02e:0003\",\"turnCount\":3,\"topicTokens\":[\"17\",\"hlsl的转换器\",\"代码中注释应最少化\",\"先把他构建产物改成库的形式吧\",\"写一个glsl\",\"并提供和cpp的互操作能力\",\"思路可以参考naga\",\"有必要的话允许上网搜索并导入一些库以方便开发\",\"用纯zig\",\"要求不能调用shaderc和spirvcross\",\"说明和用法应该单独放进docs\",\"输出规范\",\"这第一步先实现最基本的转换\"],\"createdAt\":1793332577441,\"updatedAt\":1793334922316}",
+        "name": "session-3d88cd34-169b-41e1-889b-c60ca22b2d08"
+      }
+    },
+    {
+      "id": "dialogue:1skb02e:0001",
+      "type": "Decision",
+      "content": "dialogue-turn #1 Q: 用纯zig（0.17.0）写一个glsl->hlsl的转换器，这第一步先实现最基本的转换。要求不能调用shaderc和spirvcross，思路可以参考naga。输出规范：代码中注释应最少化，说明和用法应该单独放进docs\\里。 | A: (pending)",
+      "metadata": {
+        "kind": "dialogue-turn",
+        "record": "{\"id\":\"dialogue:1skb02e:0001\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":1,\"userQuery\":\"用纯zig（0.17.0）写一个glsl->hlsl的转换器，这第一步先实现最基本的转换。要求不能调用shaderc和spirvcross，思路可以参考naga。输出规范：代码中注释应最少化，说明和用法应该单独放进docs\\\\里。\",\"assistantReply\":\"\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793332577441,\"updatedAt\":1793332577441,\"title\":\"用纯zig（0.17.0）写一个glsl->hlsl的转换器\"}",
+        "seq": 1,
+        "sessionId": "dialogue-session:1skb02e",
+        "jumped": false
+      }
+    },
+    {
+      "id": "dialogue:1skb02e:0002",
+      "type": "Decision",
+      "content": "dialogue-turn #2 Q: 有必要的话允许上网搜索并导入一些库以方便开发。 | A: 第一阶段已完成：纯 Zig 0.17.0 实现，无第三方依赖，不调用 shaderc / SPIRV-Cross，也不经过 SPIR-V。整体参考 naga 的前端思路，但直接生成 HLSL 文本： ```text 预处理 → 词法分析 → 递归下降 AST → 轻量类型推断 → HLSL 生成 ``` ## 已实现…",
+      "metadata": {
+        "kind": "dialogue-turn",
+        "record": "{\"id\":\"dialogue:1skb02e:0002\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":2,\"userQuery\":\"有必要的话允许上网搜索并导入一些库以方便开发。\",\"assistantReply\":\"第一阶段已完成：纯 Zig 0.17.0 实现，无第三方依赖，不调用 shaderc / SPIRV-Cross，也不经过 SPIR-V。整体参考 naga 的前端思路，但直接生成 HLSL 文本： ```text 预处理 → 词法分析 → 递归下降 AST → 轻量类型推断 → HLSL 生成 ``` ## 已实现 - `#version`、对象式 `#define`、`#ifdef` / `#if` / `#elif` 等条件编译，注释剥离，CRLF 归一化 - 顶点/片元着色器，阶段自动推断，可用 `--stage` 覆盖 - 标量、向量、矩阵、结构体、数组、函数、控制流 - 非采样器 uniform 汇总到 `cbuffer Globals : register(b0)` - 采样器拆成 `Texture* : register(tN)` + `SamplerState : register(sN)` - 自动生成 `VSInput` / `VSOutput` / `PSInput` / `PSOutput`，分配 `SV_Position`、`SV_TargetN`、`TEXCOORDn` 等语义 - 矩阵 `mul()` 改写、列主序构造转置、标量/列向量/矩阵构造的差异处理 - `mix→lerp`、`fract→frac`、`inversesqrt→rsqrt`、`dFdx→ddx`、`mod` 重载、布尔 `mix→select` 等内置函数映射 - `texture` / `textureLod` / `textureGrad` / `texelFetch` 映射，顶点阶段自动改用 `SampleLevel` - 带行列号的诊断，不支持的语法直接报错而不是生成可疑代码 主要代码： - [src/glsl/preprocess.zig](src/glsl/preprocess.zig) - [src/glsl/parser.zig](src/glsl/parser.zig) - [src/glsl/types.zig](src/glsl/types.zig) - [src/hlsl/emitter.zig](src/hlsl/emitter.zig) - [src/main.zig](src/main.zig) 代码内没有注释，说明全部放在 docs： - [docs/README.md](docs/README.md) - [docs/usage.md](docs/usage.md) - [docs/design.md](docs/design.md) - [docs/glsl-hlsl-mapping.md](docs/glsl-hlsl-mapping.md) ## 用法 ```powershell zig build -Doptimize=ReleaseSafe .\\\\zig-out\\\\bin\\\\glsl2hlsl.exe examples\\\\triangle.vert -o triangle.hlsl .\\\\zig-out\\\\bin\\\\glsl2hlsl.exe examples\\\\triangle.frag -s fragment -o triangle_ps.hlsl ``` 不传 `-o` 时输出到 stdout；`--help` 查看帮助。示例见 [examples/triangle.vert](examples/triangle.vert)、[examples/showcase.frag](examples/showcase.frag)。 ## 验证结果 ```powershell zig build test # 17 个单元测试通过 powershell -File tests\\\\run.ps1 ``` `tests/run.ps1` 会批量转换 [tests/shaders](tests/shaders) 和 examples 下的 10 个着色器，并用 DXC 以 `vs_6_0` / `ps_6_0` 编译生成结果，目前全部通过。输入 GLSL 也另外用 glslangValidator 校验过。DXC/glslang 只作为外部验证工具，不参与转换。 ## 当前限制 UBO/SSBO、接口块、结构体构造函数、函数重载、几何/曲面细分/计算着色器、矩阵动态索引、结构体/数组作为 stage IO、扩大维度的矩阵构造、shadow sampler、采样器数组、uniform 初值、`#include` 与函数式宏等暂不支持，遇到时会给出明确诊断。完整列表在 [映射文档](docs/glsl-hlsl-mapping.md#不支持的特性)。 后续比较自然的方向是 UBO、函数重载、更多内置函数，以及可配置的寄存器/语义分配。\",\"parentTurnId\":\"dialogue:1skb02e:0001\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793332666965,\"updatedAt\":1793334822660,\"title\":\"有必要的话允许上网搜索并导入一些库以方便开发\",\"summary\":\"第一阶段已完成：纯 Zig 0.17.0 实现，无第三方依赖，不调用 shaderc / SPIRV-Cross，也不经过 SPIR-V\",\"lastSeenAt\":1793334822660}",
+        "seq": 2,
+        "sessionId": "dialogue-session:1skb02e",
+        "jumped": false
+      }
+    },
+    {
+      "id": "dialogue:1skb02e:0003",
+      "type": "Decision",
+      "content": "dialogue-turn #3 Q: 先把他构建产物改成库的形式吧，并提供和cpp的互操作能力 | A: (pending)",
+      "metadata": {
+        "kind": "dialogue-turn",
+        "record": "{\"id\":\"dialogue:1skb02e:0003\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":3,\"userQuery\":\"先把他构建产物改成库的形式吧，并提供和cpp的互操作能力\",\"assistantReply\":\"\",\"parentTurnId\":\"dialogue:1skb02e:0002\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793334922316,\"updatedAt\":1793334922316,\"title\":\"先把他构建产物改成库的形式吧\"}",
+        "seq": 3,
+        "sessionId": "dialogue-session:1skb02e",
+        "jumped": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "dialogue:1skb02e:0001",
+      "to": "dialogue-session:1skb02e",
+      "relation": "part_of"
+    },
+    {
+      "from": "dialogue:1skb02e:0002",
+      "to": "dialogue-session:1skb02e",
+      "relation": "part_of"
+    },
+    {
+      "from": "dialogue:1skb02e:0001",
+      "to": "dialogue:1skb02e:0002",
+      "relation": "next_section"
+    },
+    {
+      "from": "dialogue:1skb02e:0003",
+      "to": "dialogue-session:1skb02e",
+      "relation": "part_of"
+    },
+    {
+      "from": "dialogue:1skb02e:0002",
+      "to": "dialogue:1skb02e:0003",
+      "relation": "next_section"
+    }
+  ]
+}

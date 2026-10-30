@@ -1,0 +1,318 @@
+<path>D:\Projects\zig\processor\src\glsl\types.zig</path>
+<type>file</type>
+<content>
+1: const std = @import("std");
+2: 
+3: pub const Scalar = enum {
+4:     bool,
+5:     int,
+6:     uint,
+7:     float,
+8:     double,
+9: 
+10:     pub fn hlsl(self: Scalar) []const u8 {
+11:         return switch (self) {
+12:             .bool => "bool",
+13:             .int => "int",
+14:             .uint => "uint",
+15:             .float => "float",
+16:             .double => "double",
+17:         };
+18:     }
+19: };
+20: 
+21: pub const SamplerKind = enum {
+22:     sampler1D,
+23:     sampler2D,
+24:     sampler3D,
+25:     samplerCube,
+26:     sampler2DArray,
+27:     samplerCubeArray,
+28:     samplerBuffer,
+29:     sampler1DArray,
+30:     sampler1DShadow,
+31:     sampler2DShadow,
+32:     samplerCubeShadow,
+33:     sampler2DArrayShadow,
+34:     sampler1DArrayShadow,
+35:     isampler1D,
+36:     isampler2D,
+37:     isampler3D,
+38:     isamplerCube,
+39:     isampler2DArray,
+40:     isamplerBuffer,
+41:     usampler1D,
+42:     usampler2D,
+43:     usampler3D,
+44:     usamplerCube,
+45:     usampler2DArray,
+46:     usamplerBuffer,
+47: 
+48:     pub fn baseScalar(self: SamplerKind) Scalar {
+49:         return switch (self) {
+50:             .isampler1D, .isampler2D, .isampler3D, .isamplerCube, .isampler2DArray, .isamplerBuffer => .int,
+51:             .usampler1D, .usampler2D, .usampler3D, .usamplerCube, .usampler2DArray, .usamplerBuffer => .uint,
+52:             else => .float,
+53:         };
+54:     }
+55: 
+56:     pub fn isShadow(self: SamplerKind) bool {
+57:         return switch (self) {
+58:             .sampler1DShadow, .sampler2DShadow, .samplerCubeShadow, .sampler2DArrayShadow, .sampler1DArrayShadow => true,
+59:             else => false,
+60:         };
+61:     }
+62: 
+63:     pub fn coordDims(self: SamplerKind) u8 {
+64:         return switch (self) {
+65:             .sampler1D, .samplerBuffer, .isampler1D, .usampler1D, .sampler1DShadow, .sampler1DArray, .sampler1DArrayShadow => 1,
+66:             .sampler2D, .sampler2DArray, .isampler2D, .isampler2DArray, .usampler2D, .usampler2DArray, .sampler2DShadow, .sampler2DArrayShadow => 2,
+67:             .sampler3D, .isampler3D, .usampler3D => 3,
+68:             .samplerCube, .samplerCubeArray, .samplerCubeShadow, .isamplerCube, .usamplerCube => 3,
+69:         };
+70:     }
+71: 
+72:     pub fn isArray(self: SamplerKind) bool {
+73:         return switch (self) {
+74:             .sampler2DArray, .samplerCubeArray, .sampler1DArray, .sampler1DArrayShadow,
+75:             .sampler2DArrayShadow, .isampler2DArray, .usampler2DArray,
+76:             => true,
+77:             else => false,
+78:         };
+79:     }
+80: 
+81:     pub fn isBuffer(self: SamplerKind) bool {
+82:         return switch (self) {
+83:             .samplerBuffer, .isamplerBuffer, .usamplerBuffer => true,
+84:             else => false,
+85:         };
+86:     }
+87: };
+88: 
+89: pub const Type = union(enum) {
+90:     void_,
+91:     scalar: Scalar,
+92:     vector: Vector,
+93:     matrix: Matrix,
+94:     sampler: SamplerKind,
+95:     array: Array,
+96:     named: []const u8,
+97:     unknown,
+98: 
+99:     pub const Vector = struct {
+100:         scalar: Scalar,
+101:         len: u8,
+102:     };
+103: 
+104:     pub const Matrix = struct {
+105:         cols: u8,
+106:         rows: u8,
+107:     };
+108: 
+109:     pub const Array = struct {
+110:         elem: *const Type,
+111:         len: ?u32,
+112:     };
+113: 
+114:     pub fn isVoid(self: Type) bool {
+115:         return switch (self) {
+116:             .void_ => true,
+117:             else => false,
+118:         };
+119:     }
+120: 
+121:     pub fn isScalar(self: Type) bool {
+122:         return switch (self) {
+123:             .scalar => true,
+124:             else => false,
+125:         };
+126:     }
+127: 
+128:     pub fn isVector(self: Type) bool {
+129:         return switch (self) {
+130:             .vector => true,
+131:             else => false,
+132:         };
+133:     }
+134: 
+135:     pub fn isMatrix(self: Type) bool {
+136:         return switch (self) {
+137:             .matrix => true,
+138:             else => false,
+139:         };
+140:     }
+141: 
+142:     pub fn isSampler(self: Type) bool {
+143:         return switch (self) {
+144:             .sampler => true,
+145:             else => false,
+146:         };
+147:     }
+148: 
+149:     pub fn scalarOf(self: Type) ?Scalar {
+150:         return switch (self) {
+151:             .scalar => |s| s,
+152:             .vector => |v| v.scalar,
+153:             .matrix => .float,
+154:             else => null,
+155:         };
+156:     }
+157: 
+158:     pub fn componentCount(self: Type) ?u8 {
+159:         return switch (self) {
+160:             .scalar => 1,
+161:             .vector => |v| v.len,
+162:             else => null,
+163:         };
+164:     }
+165: };
+166: 
+167: pub fn same(a: Type, b: Type) bool {
+168:     if (std.meta.activeTag(a) != std.meta.activeTag(b)) return false;
+169:     return switch (a) {
+170:         .void_ => true,
+171:         .unknown => true,
+172:         .scalar => |s| s == b.scalar,
+173:         .vector => |v| v.scalar == b.vector.scalar and v.len == b.vector.len,
+174:         .matrix => |m| m.cols == b.matrix.cols and m.rows == b.matrix.rows,
+175:         .sampler => |s| s == b.sampler,
+176:         .named => |n| std.mem.eql(u8, n, b.named),
+177:         .array => |x| x.len == b.array.len and same(x.elem.*, b.array.elem.*),
+178:     };
+179: }
+180: 
+181: pub fn hlslName(allocator: std.mem.Allocator, typ: Type) ![]const u8 {
+182:     return switch (typ) {
+183:         .void_ => "void",
+184:         .unknown => "unknown",
+185:         .scalar => |s| s.hlsl(),
+186:         .vector => |v| std.fmt.allocPrint(allocator, "{s}{d}", .{ v.scalar.hlsl(), v.len }),
+187:         .matrix => |m| std.fmt.allocPrint(allocator, "float{d}x{d}", .{ m.rows, m.cols }),
+188:         .sampler => |s| samplerHlsl(s),
+189:         .named => |n| n,
+190:         .array => |a| try hlslName(allocator, a.elem.*),
+191:     };
+192: }
+193: 
+194: fn samplerHlsl(kind: SamplerKind) []const u8 {
+195:     if (kind.isBuffer()) return "Buffer";
+196:     return switch (kind) {
+197:         .sampler1D, .sampler1DShadow, .sampler1DArray, .sampler1DArrayShadow => "Texture1D",
+198:         .sampler2D, .sampler2DShadow, .sampler2DArray, .sampler2DArrayShadow => "Texture2D",
+199:         .sampler3D => "Texture3D",
+200:         .samplerCube, .samplerCubeShadow, .samplerCubeArray => "TextureCube",
+201:         .isampler1D, .usampler1D => "Texture1D",
+202:         .isampler2D, .usampler2D, .isampler2DArray, .usampler2DArray => "Texture2D",
+203:         .isampler3D, .usampler3D => "Texture3D",
+204:         .isamplerCube, .usamplerCube => "TextureCube",
+205:         else => "Texture2D",
+206:     };
+207: }
+208: 
+209: const sampler_names = [_]struct { name: []const u8, kind: SamplerKind }{
+210:     .{ .name = "sampler1D", .kind = .sampler1D },
+211:     .{ .name = "sampler2D", .kind = .sampler2D },
+212:     .{ .name = "sampler3D", .kind = .sampler3D },
+213:     .{ .name = "samplerCube", .kind = .samplerCube },
+214:     .{ .name = "sampler2DArray", .kind = .sampler2DArray },
+215:     .{ .name = "samplerCubeArray", .kind = .samplerCubeArray },
+216:     .{ .name = "samplerBuffer", .kind = .samplerBuffer },
+217:     .{ .name = "sampler1DArray", .kind = .sampler1DArray },
+218:     .{ .name = "sampler1DShadow", .kind = .sampler1DShadow },
+219:     .{ .name = "sampler2DShadow", .kind = .sampler2DShadow },
+220:     .{ .name = "samplerCubeShadow", .kind = .samplerCubeShadow },
+221:     .{ .name = "sampler2DArrayShadow", .kind = .sampler2DArrayShadow },
+222:     .{ .name = "sampler1DArrayShadow", .kind = .sampler1DArrayShadow },
+223:     .{ .name = "isampler1D", .kind = .isampler1D },
+224:     .{ .name = "isampler2D", .kind = .isampler2D },
+225:     .{ .name = "isampler3D", .kind = .isampler3D },
+226:     .{ .name = "isamplerCube", .kind = .isamplerCube },
+227:     .{ .name = "isampler2DArray", .kind = .isampler2DArray },
+228:     .{ .name = "isamplerBuffer", .kind = .isamplerBuffer },
+229:     .{ .name = "usampler1D", .kind = .usampler1D },
+230:     .{ .name = "usampler2D", .kind = .usampler2D },
+231:     .{ .name = "usampler3D", .kind = .usampler3D },
+232:     .{ .name = "usamplerCube", .kind = .usamplerCube },
+233:     .{ .name = "usampler2DArray", .kind = .usampler2DArray },
+234:     .{ .name = "usamplerBuffer", .kind = .usamplerBuffer },
+235: };
+236: 
+237: pub fn fromBuiltinName(name: []const u8) ?Type {
+238:     if (std.mem.eql(u8, name, "void")) return .void_;
+239:     if (std.mem.eql(u8, name, "float")) return .{ .scalar = .float };
+240:     if (std.mem.eql(u8, name, "int")) return .{ .scalar = .int };
+241:     if (std.mem.eql(u8, name, "uint")) return .{ .scalar = .uint };
+242:     if (std.mem.eql(u8, name, "bool")) return .{ .scalar = .bool };
+243:     if (std.mem.eql(u8, name, "double")) return .{ .scalar = .double };
+244: 
+245:     const vector_prefixes = [_]struct { prefix: []const u8, scalar: Scalar }{
+246:         .{ .prefix = "vec", .scalar = .float },
+247:         .{ .prefix = "ivec", .scalar = .int },
+248:         .{ .prefix = "uvec", .scalar = .uint },
+249:         .{ .prefix = "bvec", .scalar = .bool },
+250:         .{ .prefix = "dvec", .scalar = .double },
+251:     };
+252:     for (vector_prefixes) |entry| {
+253:         if (std.mem.startsWith(u8, name, entry.prefix)) {
+254:             const suffix = name[entry.prefix.len..];
+255:             const len = parseSize(suffix) orelse continue;
+256:             if (len < 2) continue;
+257:             return .{ .vector = .{ .scalar = entry.scalar, .len = len } };
+258:         }
+259:     }
+260: 
+261:     if (std.mem.startsWith(u8, name, "mat")) {
+262:         return parseMatrixName(name[3..]);
+263:     }
+264: 
+265:     for (sampler_names) |entry| {
+266:         if (std.mem.eql(u8, name, entry.name)) return .{ .sampler = entry.kind };
+267:     }
+268:     return null;
+269: }
+270: 
+271: fn parseMatrixName(rest: []const u8) ?Type {
+272:     if (rest.len == 0) return null;
+273:     if (std.mem.indexOfScalar(u8, rest, 'x')) |split| {
+274:         if (split == 0 or split + 1 >= rest.len) return null;
+275:         const cols = parseSize(rest[0..split]) orelse return null;
+276:         const rows = parseSize(rest[split + 1 ..]) orelse return null;
+277:         if (cols < 2 or cols > 4 or rows < 2 or rows > 4) return null;
+278:         return .{ .matrix = .{ .cols = cols, .rows = rows } };
+279:     }
+280:     const size = parseSize(rest) orelse return null;
+281:     if (size < 2 or size > 4) return null;
+282:     return .{ .matrix = .{ .cols = size, .rows = size } };
+283: }
+284: 
+285: fn parseSize(text: []const u8) ?u8 {
+286:     if (text.len != 1) return null;
+287:     const c = text[0];
+288:     if (c < '2' or c > '4') return null;
+289:     return c - '0';
+290: }
+291: 
+292: pub fn isBuiltinTypeName(name: []const u8) bool {
+293:     if (fromBuiltinName(name) != null) return true;
+294:     if (std.mem.startsWith(u8, name, "image")) return true;
+295:     if (std.mem.startsWith(u8, name, "atomic_")) return true;
+296:     return false;
+297: }
+298: 
+299: pub fn resolveName(name: []const u8, struct_names: []const []const u8) ?Type {
+300:     if (fromBuiltinName(name)) |typ| return typ;
+301:     for (struct_names) |struct_name| {
+302:         if (std.mem.eql(u8, name, struct_name)) return .{ .named = struct_name };
+303:     }
+304:     return null;
+305: }
+306: 
+307: pub fn commonScalar(a: Scalar, b: Scalar) Scalar {
+308:     if (a == .double or b == .double) return .double;
+309:     if (a == .float or b == .float) return .float;
+310:     if (a == .uint or b == .uint) return .uint;
+311:     return .int;
+312: }
+
+(End of file - total 312 lines)
+</content>

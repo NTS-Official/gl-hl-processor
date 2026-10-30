@@ -1,0 +1,129 @@
+
+> src\hlsl\emitter.zig:668:    fn emitLocalDecl(self: *Emitter, variable: *ast.VarDecl) Error!void {
+  src\hlsl\emitter.zig:669:        if (variable.qualifiers.storage) |storage| {
+  src\hlsl\emitter.zig:670:            if (storage == .const_) try self.code.write("const ");
+  src\hlsl\emitter.zig:671:        }
+  src\hlsl\emitter.zig:672:        const typ = self.resolveType(variable.typ);
+  src\hlsl\emitter.zig:673:        try self.emitType(typ);
+  src\hlsl\emitter.zig:674:        try self.code.print(" {s}", .{variable.name});
+  src\hlsl\emitter.zig:675:        if (try self.arrayLen(variable.array_len, variable.line, variable.column)) |len| {
+  src\hlsl\emitter.zig:676:            try self.code.print("[{d}]", .{len});
+  src\hlsl\emitter.zig:677:        }
+  src\hlsl\emitter.zig:678:        if (variable.initializer) |initializer| {
+  src\hlsl\emitter.zig:679:            try self.code.write(" = ");
+  src\hlsl\emitter.zig:680:            try self.emitExprPrec(initializer, 1);
+  src\hlsl\emitter.zig:681:        }
+  src\hlsl\emitter.zig:682:        try self.locals.append(self.allocator, .{ .name = variable.name, .typ = typ });
+  src\hlsl\emitter.zig:683:    }
+  src\hlsl\emitter.zig:684:
+  src\hlsl\emitter.zig:685:    fn emitTypeName(self: *Emitter, name: ast.TypeName) Error!void {
+  src\hlsl\emitter.zig:686:        try self.emitType(self.resolveType(name));
+  src\hlsl\emitter.zig:687:    }
+  src\hlsl\emitter.zig:688:
+  src\hlsl\emitter.zig:689:    fn emitType(self: *Emitter, typ: types.Type) Error!void {
+  src\hlsl\emitter.zig:690:        switch (typ) {
+  src\hlsl\emitter.zig:691:            .named => |name| try self.code.print("{s}", .{name}),
+  src\hlsl\emitter.zig:692:            .array => |array| try self.emitType(array.elem.*),
+  src\hlsl\emitter.zig:693:            else => try self.code.print("{s}", .{try types.hlslName(self.allocator, typ)}),
+  src\hlsl\emitter.zig:694:        }
+  src\hlsl\emitter.zig:695:    }
+  src\hlsl\emitter.zig:696:
+  src\hlsl\emitter.zig:697:    fn emitExprPrec(self: *Emitter, expression: *ast.Expr, min_precedence: u8) Error!void {
+  src\hlsl\emitter.zig:698:        const precedence = exprPrecedence(expression);
+  src\hlsl\emitter.zig:699:        const parenthesize = precedence < min_precedence;
+  src\hlsl\emitter.zig:700:        if (parenthesize) try self.code.write("(");
+  src\hlsl\emitter.zig:701:        try self.emitExpr(expression);
+  src\hlsl\emitter.zig:702:        if (parenthesize) try self.code.write(")");
+  src\hlsl\emitter.zig:703:    }
+  src\hlsl\emitter.zig:704:
+  src\hlsl\emitter.zig:705:    fn emitExpr(self: *Emitter, expression: *ast.Expr) Error!void {
+  src\hlsl\emitter.zig:706:        switch (expression.*) {
+  src\hlsl\emitter.zig:707:            .int_literal => |text| try self.code.write(text),
+  src\hlsl\emitter.zig:708:            .uint_literal => |text| try self.code.write(text),
+  src\hlsl\emitter.zig:709:            .float_literal => |text| try self.emitFloatLiteral(text),
+  src\hlsl\emitter.zig:710:            .bool_literal => |value| try self.code.write(if (value) "true" else "false"),
+  src\hlsl\emitter.zig:711:            .identifier => |ident| {
+  src\hlsl\emitter.zig:712:                if (try self.builtinText(ident.name, ident.line, ident.column)) |text| {
+  src\hlsl\emitter.zig:713:                    try self.code.write(text);
+> src\hlsl\emitter.zig:288:    fn inputSemantic(self: *Emitter, global: Global, texcoord: *u32) Error![]const u8 {
+  src\hlsl\emitter.zig:289:        if (self.stage == .fragment) {
+  src\hlsl\emitter.zig:290:            const location = layoutValue(global.decl.qualifiers, "location");
+  src\hlsl\emitter.zig:291:            if (location) |index| return std.fmt.allocPrint(self.allocator, "TEXCOORD{d}", .
+{index});
+  src\hlsl\emitter.zig:292:            const semantic = try std.fmt.allocPrint(self.allocator, "TEXCOORD{d}", .{texcoor
+d.*});
+  src\hlsl\emitter.zig:293:            texcoord.* += 1;
+  src\hlsl\emitter.zig:294:            return semantic;
+  src\hlsl\emitter.zig:295:        }
+  src\hlsl\emitter.zig:296:        const lower = try std.ascii.allocLowerString(self.allocator, global.name);
+  src\hlsl\emitter.zig:297:        if (std.mem.indexOf(u8, lower, "position") != null) return "POSITION";
+  src\hlsl\emitter.zig:298:        if (std.mem.indexOf(u8, lower, "normal") != null) return "NORMAL";
+  src\hlsl\emitter.zig:299:        if (std.mem.indexOf(u8, lower, "tangent") != null) return "TANGENT";
+  src\hlsl\emitter.zig:300:        if (std.mem.indexOf(u8, lower, "bitangent") != null) return "BINORMAL";
+  src\hlsl\emitter.zig:301:        if (std.mem.indexOf(u8, lower, "binormal") != null) return "BINORMAL";
+  src\hlsl\emitter.zig:302:        if (std.mem.indexOf(u8, lower, "color") != null or std.mem.indexOf(u8, lower, "colou
+r") != null) return "COLOR";
+  src\hlsl\emitter.zig:303:        if (std.mem.indexOf(u8, lower, "weight") != null) return "BLENDWEIGHT";
+  src\hlsl\emitter.zig:304:        if (std.mem.indexOf(u8, lower, "joint") != null) return "BLENDINDICES";
+  src\hlsl\emitter.zig:305:        if (std.mem.indexOf(u8, lower, "index") != null) return "BLENDINDICES";
+  src\hlsl\emitter.zig:306:        if (layoutValue(global.decl.qualifiers, "location")) |index| {
+  src\hlsl\emitter.zig:307:            return std.fmt.allocPrint(self.allocator, "TEXCOORD{d}", .{index});
+  src\hlsl\emitter.zig:308:        }
+  src\hlsl\emitter.zig:309:        const semantic = try std.fmt.allocPrint(self.allocator, "TEXCOORD{d}", .{texcoord.*}
+);
+  src\hlsl\emitter.zig:310:        texcoord.* += 1;
+  src\hlsl\emitter.zig:311:        return semantic;
+  src\hlsl\emitter.zig:312:    }
+  src\hlsl\emitter.zig:313:
+> src\hlsl\emitter.zig:314:    fn outputSemantic(self: *Emitter, global: Global, target: *u32, texcoord: *u32) Error![]
+const u8 {
+  src\hlsl\emitter.zig:315:        const location = layoutValue(global.decl.qualifiers, "location");
+  src\hlsl\emitter.zig:316:        if (self.stage == .vertex) {
+  src\hlsl\emitter.zig:317:            if (location) |index| return std.fmt.allocPrint(self.allocator, "TEXCOORD{d}", .
+{index});
+  src\hlsl\emitter.zig:318:            const semantic = try std.fmt.allocPrint(self.allocator, "TEXCOORD{d}", .{texcoor
+d.*});
+  src\hlsl\emitter.zig:319:            texcoord.* += 1;
+  src\hlsl\emitter.zig:320:            return semantic;
+  src\hlsl\emitter.zig:321:        }
+  src\hlsl\emitter.zig:322:        if (location) |index| return std.fmt.allocPrint(self.allocator, "SV_Target{d}", .{in
+dex});
+  src\hlsl\emitter.zig:323:        const semantic = try std.fmt.allocPrint(self.allocator, "SV_Target{d}", .{target.*})
+;
+  src\hlsl\emitter.zig:324:        target.* += 1;
+  src\hlsl\emitter.zig:325:        return semantic;
+  src\hlsl\emitter.zig:326:    }
+  src\hlsl\emitter.zig:327:
+  src\hlsl\emitter.zig:328:    fn emitTranslationUnit(self: *Emitter) Error!void {
+  src\hlsl\emitter.zig:329:        try self.emitStructs();
+  src\hlsl\emitter.zig:330:        try self.emitGlobals();
+  src\hlsl\emitter.zig:331:        try self.emitIoStructs();
+  src\hlsl\emitter.zig:332:        try self.emitHelpers();
+  src\hlsl\emitter.zig:333:        try self.emitFunctions();
+  src\hlsl\emitter.zig:334:        try self.emitEntry();
+  src\hlsl\emitter.zig:335:    }
+  src\hlsl\emitter.zig:336:
+  src\hlsl\emitter.zig:337:    fn emitStructs(self: *Emitter) Error!void {
+  src\hlsl\emitter.zig:338:        for (self.structs.items) |s| {
+  src\hlsl\emitter.zig:339:            try self.code.printLine("struct {s} {{", .{s.name});
+  src\hlsl\emitter.zig:340:            self.code.push();
+  src\hlsl\emitter.zig:341:            for (s.fields) |field| {
+  src\hlsl\emitter.zig:342:                const typ = self.resolveType(field.typ);
+  src\hlsl\emitter.zig:343:                try self.emitType(typ);
+  src\hlsl\emitter.zig:344:                try self.code.print(" {s}", .{field.name});
+  src\hlsl\emitter.zig:345:                if (field.array_len) |len| try self.code.print("[{d}]", .{len});
+  src\hlsl\emitter.zig:346:                try self.code.line(";");
+  src\hlsl\emitter.zig:347:            }
+  src\hlsl\emitter.zig:348:            self.code.pop();
+  src\hlsl\emitter.zig:349:            try self.code.line("};");
+  src\hlsl\emitter.zig:350:            try self.code.blank();
+  src\hlsl\emitter.zig:351:        }
+  src\hlsl\emitter.zig:352:    }
+  src\hlsl\emitter.zig:353:
+  src\hlsl\emitter.zig:354:    fn emitGlobals(self: *Emitter) Error!void {
+  src\hlsl\emitter.zig:355:        var has_const = false;
+  src\hlsl\emitter.zig:356:        for (self.globals.items) |global| {
+  src\hlsl\emitter.zig:357:            if (global.kind != .const_ and global.kind != .plain) continue;
+  src\hlsl\emitter.zig:358:            has_const = true;
+  src\hlsl\emitter.zig:359:            try self.code.write("static ");
+

@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "dialogue-session:1skb02e",
+      "type": "Decision",
+      "content": "dialogue-session session-3d88cd34-169b-41e1-889b-c60ca22b2d08 turns=1 tip=dialogue:1skb02e:0001",
+      "metadata": {
+        "kind": "dialogue-session",
+        "record": "{\"id\":\"dialogue-session:1skb02e\",\"name\":\"session-3d88cd34-169b-41e1-889b-c60ca22b2d08\",\"turnCount\":1,\"topicTokens\":[\"17\",\"hlsl的转换器\",\"代码中注释应最少化\",\"写一个glsl\",\"思路可以参考naga\",\"用纯zig\",\"要求不能调用shaderc和spirvcross\",\"说明和用法应该单独放进docs\",\"输出规范\",\"这第一步先实现最基本的转换\"],\"createdAt\":1793332577441,\"updatedAt\":1793332577441,\"tipTurnId\":\"dialogue:1skb02e:0001\"}",
+        "name": "session-3d88cd34-169b-41e1-889b-c60ca22b2d08"
+      }
+    },
+    {
+      "id": "dialogue:1skb02e:0001",
+      "type": "Decision",
+      "content": "dialogue-turn #1 Q: 用纯zig（0.17.0）写一个glsl->hlsl的转换器，这第一步先实现最基本的转换。要求不能调用shaderc和spirvcross，思路可以参考naga。输出规范：代码中注释应最少化，说明和用法应该单独放进docs\\里。 | A: (pending)",
+      "metadata": {
+        "kind": "dialogue-turn",
+        "record": "{\"id\":\"dialogue:1skb02e:0001\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":1,\"userQuery\":\"用纯zig（0.17.0）写一个glsl->hlsl的转换器，这第一步先实现最基本的转换。要求不能调用shaderc和spirvcross，思路可以参考naga。输出规范：代码中注释应最少化，说明和用法应该单独放进docs\\\\里。\",\"assistantReply\":\"\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793332577441,\"updatedAt\":1793332577441,\"title\":\"用纯zig（0.17.0）写一个glsl->hlsl的转换器\"}",
+        "seq": 1,
+        "sessionId": "dialogue-session:1skb02e",
+        "jumped": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "dialogue:1skb02e:0001",
+      "to": "dialogue-session:1skb02e",
+      "relation": "part_of"
+    }
+  ]
+}

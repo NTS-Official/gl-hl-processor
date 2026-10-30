@@ -1,0 +1,188 @@
+
+> src\glsl\types.zig:21:pub const SamplerKind = enum {
+  src\glsl\types.zig:22:    sampler1D,
+  src\glsl\types.zig:23:    sampler2D,
+  src\glsl\types.zig:24:    sampler3D,
+  src\glsl\types.zig:25:    samplerCube,
+  src\glsl\types.zig:26:    sampler2DArray,
+  src\glsl\types.zig:27:    samplerCubeArray,
+  src\glsl\types.zig:28:    samplerBuffer,
+  src\glsl\types.zig:29:    sampler1DArray,
+  src\glsl\types.zig:30:    sampler1DShadow,
+  src\glsl\types.zig:31:    sampler2DShadow,
+  src\glsl\types.zig:32:    samplerCubeShadow,
+  src\glsl\types.zig:33:    sampler2DArrayShadow,
+  src\glsl\types.zig:34:    sampler1DArrayShadow,
+  src\glsl\types.zig:35:    isampler1D,
+  src\glsl\types.zig:36:    isampler2D,
+  src\glsl\types.zig:37:    isampler3D,
+  src\glsl\types.zig:38:    isamplerCube,
+  src\glsl\types.zig:39:    isampler2DArray,
+  src\glsl\types.zig:40:    isamplerBuffer,
+  src\glsl\types.zig:41:    usampler1D,
+  src\glsl\types.zig:42:    usampler2D,
+  src\glsl\types.zig:43:    usampler3D,
+  src\glsl\types.zig:44:    usamplerCube,
+  src\glsl\types.zig:45:    usampler2DArray,
+  src\glsl\types.zig:46:    usamplerBuffer,
+  src\glsl\types.zig:47:
+> src\glsl\types.zig:48:    pub fn baseScalar(self: SamplerKind) Scalar {
+  src\glsl\types.zig:49:        return switch (self) {
+  src\glsl\types.zig:50:            .isampler1D, .isampler2D, .isampler3D, .isamplerCube, .isampler2DArray, .isamplerBu
+ffer => .int,
+  src\glsl\types.zig:51:            .usampler1D, .usampler2D, .usampler3D, .usamplerCube, .usampler2DArray, .usamplerBu
+ffer => .uint,
+  src\glsl\types.zig:52:            else => .float,
+  src\glsl\types.zig:53:        };
+  src\glsl\types.zig:54:    }
+  src\glsl\types.zig:55:
+> src\glsl\types.zig:56:    pub fn isShadow(self: SamplerKind) bool {
+  src\glsl\types.zig:57:        return switch (self) {
+  src\glsl\types.zig:58:            .sampler1DShadow, .sampler2DShadow, .samplerCubeShadow, .sampler2DArrayShadow, .sam
+pler1DArrayShadow => true,
+  src\glsl\types.zig:59:            else => false,
+  src\glsl\types.zig:60:        };
+  src\glsl\types.zig:61:    }
+  src\glsl\types.zig:62:
+> src\glsl\types.zig:63:    pub fn coordDims(self: SamplerKind) u8 {
+  src\glsl\types.zig:64:        return switch (self) {
+  src\glsl\types.zig:65:            .sampler1D, .samplerBuffer, .isampler1D, .usampler1D, .isamplerBuffer, .usamplerBuf
+fer, .sampler1DShadow, .sampler1DArray, .sampler1DArrayShadow => 1,
+  src\glsl\types.zig:66:            .sampler2D, .sampler2DArray, .isampler2D, .isampler2DArray, .usampler2D, .usampler2
+DArray, .sampler2DShadow, .sampler2DArrayShadow => 2,
+  src\glsl\types.zig:67:            .sampler3D, .isampler3D, .usampler3D => 3,
+  src\glsl\types.zig:68:            .samplerCube, .samplerCubeArray, .samplerCubeShadow, .isamplerCube, .usamplerCube =
+> 3,
+  src\glsl\types.zig:69:        };
+  src\glsl\types.zig:70:    }
+  src\glsl\types.zig:71:
+> src\glsl\types.zig:72:    pub fn isArray(self: SamplerKind) bool {
+  src\glsl\types.zig:73:        return switch (self) {
+  src\glsl\types.zig:74:            .sampler2DArray, .samplerCubeArray, .sampler1DArray, .sampler1DArrayShadow,
+  src\glsl\types.zig:75:            .sampler2DArrayShadow, .isampler2DArray, .usampler2DArray,
+  src\glsl\types.zig:76:            => true,
+  src\glsl\types.zig:77:            else => false,
+  src\glsl\types.zig:78:        };
+  src\glsl\types.zig:79:    }
+  src\glsl\types.zig:80:
+> src\glsl\types.zig:81:    pub fn isBuffer(self: SamplerKind) bool {
+  src\glsl\types.zig:82:        return switch (self) {
+  src\glsl\types.zig:83:            .samplerBuffer, .isamplerBuffer, .usamplerBuffer => true,
+  src\glsl\types.zig:84:            else => false,
+  src\glsl\types.zig:85:        };
+  src\glsl\types.zig:86:    }
+  src\glsl\types.zig:87:};
+  src\glsl\types.zig:88:
+  src\glsl\types.zig:89:pub const Type = union(enum) {
+  src\glsl\types.zig:90:    void_,
+  src\glsl\types.zig:91:    scalar: Scalar,
+  src\glsl\types.zig:92:    vector: Vector,
+  src\glsl\types.zig:93:    matrix: Matrix,
+> src\glsl\types.zig:94:    sampler: SamplerKind,
+  src\glsl\types.zig:95:    array: Array,
+  src\glsl\types.zig:96:    named: []const u8,
+  src\glsl\types.zig:97:    unknown,
+  src\glsl\types.zig:98:
+  src\glsl\types.zig:99:    pub const Vector = struct {
+  src\glsl\types.zig:100:        scalar: Scalar,
+  src\glsl\types.zig:101:        len: u8,
+  src\glsl\types.zig:102:    };
+  src\glsl\types.zig:103:
+  src\glsl\types.zig:104:    pub const Matrix = struct {
+  src\glsl\types.zig:105:        cols: u8,
+  src\glsl\types.zig:106:        rows: u8,
+  src\glsl\types.zig:107:    };
+  src\glsl\types.zig:108:
+  src\glsl\types.zig:109:    pub const Array = struct {
+  src\glsl\types.zig:110:        elem: *const Type,
+  src\glsl\types.zig:111:        len: ?u32,
+  src\glsl\types.zig:112:    };
+  src\glsl\types.zig:113:
+  src\glsl\types.zig:114:    pub fn isVoid(self: Type) bool {
+  src\glsl\types.zig:115:        return switch (self) {
+  src\glsl\types.zig:116:            .void_ => true,
+  src\glsl\types.zig:117:            else => false,
+  src\glsl\types.zig:118:        };
+  src\glsl\types.zig:119:    }
+  src\glsl\types.zig:120:
+  src\glsl\types.zig:121:    pub fn isScalar(self: Type) bool {
+  src\glsl\types.zig:122:        return switch (self) {
+  src\glsl\types.zig:123:            .scalar => true,
+  src\glsl\types.zig:124:            else => false,
+  src\glsl\types.zig:125:        };
+  src\glsl\types.zig:126:    }
+  src\glsl\types.zig:127:
+  src\glsl\types.zig:128:    pub fn isVector(self: Type) bool {
+  src\glsl\types.zig:129:        return switch (self) {
+  src\glsl\types.zig:130:            .vector => true,
+  src\glsl\types.zig:131:            else => false,
+  src\glsl\types.zig:132:        };
+  src\glsl\types.zig:133:    }
+  src\glsl\types.zig:134:
+  src\glsl\types.zig:135:    pub fn isMatrix(self: Type) bool {
+  src\glsl\types.zig:136:        return switch (self) {
+  src\glsl\types.zig:137:            .matrix => true,
+  src\glsl\types.zig:138:            else => false,
+  src\glsl\types.zig:139:        };
+> src\glsl\types.zig:194:fn samplerHlsl(kind: SamplerKind) []const u8 {
+  src\glsl\types.zig:195:    if (kind.isBuffer()) return "Buffer";
+  src\glsl\types.zig:196:    return switch (kind) {
+  src\glsl\types.zig:197:        .sampler1D, .sampler1DShadow, .sampler1DArray, .sampler1DArrayShadow => "Texture1D",
+  src\glsl\types.zig:198:        .sampler2D, .sampler2DShadow, .sampler2DArray, .sampler2DArrayShadow => "Texture2D",
+  src\glsl\types.zig:199:        .sampler3D => "Texture3D",
+  src\glsl\types.zig:200:        .samplerCube, .samplerCubeShadow, .samplerCubeArray => "TextureCube",
+  src\glsl\types.zig:201:        .isampler1D, .usampler1D => "Texture1D",
+  src\glsl\types.zig:202:        .isampler2D, .usampler2D, .isampler2DArray, .usampler2DArray => "Texture2D",
+  src\glsl\types.zig:203:        .isampler3D, .usampler3D => "Texture3D",
+  src\glsl\types.zig:204:        .isamplerCube, .usamplerCube => "TextureCube",
+  src\glsl\types.zig:205:        else => "Texture2D",
+  src\glsl\types.zig:206:    };
+  src\glsl\types.zig:207:}
+  src\glsl\types.zig:208:
+> src\glsl\types.zig:209:const sampler_names = [_]struct { name: []const u8, kind: SamplerKind }{
+  src\glsl\types.zig:210:    .{ .name = "sampler1D", .kind = .sampler1D },
+  src\glsl\types.zig:211:    .{ .name = "sampler2D", .kind = .sampler2D },
+  src\glsl\types.zig:212:    .{ .name = "sampler3D", .kind = .sampler3D },
+  src\glsl\types.zig:213:    .{ .name = "samplerCube", .kind = .samplerCube },
+  src\glsl\types.zig:214:    .{ .name = "sampler2DArray", .kind = .sampler2DArray },
+  src\glsl\types.zig:215:    .{ .name = "samplerCubeArray", .kind = .samplerCubeArray },
+  src\glsl\types.zig:216:    .{ .name = "samplerBuffer", .kind = .samplerBuffer },
+  src\glsl\types.zig:217:    .{ .name = "sampler1DArray", .kind = .sampler1DArray },
+  src\glsl\types.zig:218:    .{ .name = "sampler1DShadow", .kind = .sampler1DShadow },
+  src\glsl\types.zig:219:    .{ .name = "sampler2DShadow", .kind = .sampler2DShadow },
+  src\glsl\types.zig:220:    .{ .name = "samplerCubeShadow", .kind = .samplerCubeShadow },
+  src\glsl\types.zig:221:    .{ .name = "sampler2DArrayShadow", .kind = .sampler2DArrayShadow },
+  src\glsl\types.zig:222:    .{ .name = "sampler1DArrayShadow", .kind = .sampler1DArrayShadow },
+  src\glsl\types.zig:223:    .{ .name = "isampler1D", .kind = .isampler1D },
+  src\glsl\types.zig:224:    .{ .name = "isampler2D", .kind = .isampler2D },
+  src\glsl\types.zig:225:    .{ .name = "isampler3D", .kind = .isampler3D },
+  src\glsl\types.zig:226:    .{ .name = "isamplerCube", .kind = .isamplerCube },
+  src\glsl\types.zig:227:    .{ .name = "isampler2DArray", .kind = .isampler2DArray },
+  src\glsl\types.zig:228:    .{ .name = "isamplerBuffer", .kind = .isamplerBuffer },
+  src\glsl\types.zig:229:    .{ .name = "usampler1D", .kind = .usampler1D },
+  src\glsl\types.zig:230:    .{ .name = "usampler2D", .kind = .usampler2D },
+  src\glsl\types.zig:231:    .{ .name = "usampler3D", .kind = .usampler3D },
+  src\glsl\types.zig:232:    .{ .name = "usamplerCube", .kind = .usamplerCube },
+  src\glsl\types.zig:233:    .{ .name = "usampler2DArray", .kind = .usampler2DArray },
+  src\glsl\types.zig:234:    .{ .name = "usamplerBuffer", .kind = .usamplerBuffer },
+  src\glsl\types.zig:235:};
+  src\glsl\types.zig:236:
+  src\glsl\types.zig:237:pub fn fromBuiltinName(name: []const u8) ?Type {
+  src\glsl\types.zig:238:    if (std.mem.eql(u8, name, "void")) return .void_;
+  src\glsl\types.zig:239:    if (std.mem.eql(u8, name, "float")) return .{ .scalar = .float };
+  src\glsl\types.zig:240:    if (std.mem.eql(u8, name, "int")) return .{ .scalar = .int };
+  src\glsl\types.zig:241:    if (std.mem.eql(u8, name, "uint")) return .{ .scalar = .uint };
+  src\glsl\types.zig:242:    if (std.mem.eql(u8, name, "bool")) return .{ .scalar = .bool };
+  src\glsl\types.zig:243:    if (std.mem.eql(u8, name, "double")) return .{ .scalar = .double };
+  src\glsl\types.zig:244:
+  src\glsl\types.zig:245:    const vector_prefixes = [_]struct { prefix: []const u8, scalar: Scalar }{
+  src\glsl\types.zig:246:        .{ .prefix = "vec", .scalar = .float },
+  src\glsl\types.zig:247:        .{ .prefix = "ivec", .scalar = .int },
+  src\glsl\types.zig:248:        .{ .prefix = "uvec", .scalar = .uint },
+  src\glsl\types.zig:249:        .{ .prefix = "bvec", .scalar = .bool },
+  src\glsl\types.zig:250:        .{ .prefix = "dvec", .scalar = .double },
+  src\glsl\types.zig:251:    };
+  src\glsl\types.zig:252:    for (vector_prefixes) |entry| {
+  src\glsl\types.zig:253:        if (std.mem.startsWith(u8, name, entry.prefix)) {
+  src\glsl\types.zig:254:            const suffix = name[entry.prefix.len..];
+

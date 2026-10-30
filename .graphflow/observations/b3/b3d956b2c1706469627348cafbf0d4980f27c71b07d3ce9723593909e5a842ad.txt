@@ -1,0 +1,215 @@
+
+> src\hlsl\emitter.zig:792:            .assign => |assign| {
+  src\hlsl\emitter.zig:793:                try self.emitExprPrec(assign.target, 14);
+> src\hlsl\emitter.zig:794:                try self.code.print(" {s} ", .{assignOperator(assign.op)});
+  src\hlsl\emitter.zig:795:                try self.emitExprPrec(assign.value, 1);
+  src\hlsl\emitter.zig:796:            },
+  src\hlsl\emitter.zig:797:            .ternary => |ternary| {
+  src\hlsl\emitter.zig:798:                try self.emitExprPrec(ternary.condition, 3);
+  src\hlsl\emitter.zig:799:                try self.code.write(" ? ");
+  src\hlsl\emitter.zig:800:                try self.emitExprPrec(ternary.then_expr, 1);
+  src\hlsl\emitter.zig:801:                try self.code.write(" : ");
+  src\hlsl\emitter.zig:802:                try self.emitExprPrec(ternary.else_expr, 1);
+  src\hlsl\emitter.zig:803:            },
+  src\hlsl\emitter.zig:804:            .call => |call| try self.emitCall(call),
+  src\hlsl\emitter.zig:805:            .member => |member| {
+  src\hlsl\emitter.zig:806:                try self.emitExprPrec(member.base, 14);
+  src\hlsl\emitter.zig:807:                try self.code.write(".");
+  src\hlsl\emitter.zig:808:                const base = self.typeOf(member.base);
+  src\hlsl\emitter.zig:809:                if ((base.isVector() or base.isScalar()) and swizzleLength(member.name) != n
+ull) {
+  src\hlsl\emitter.zig:810:                    try self.emitSwizzle(member.name);
+  src\hlsl\emitter.zig:811:                } else {
+  src\hlsl\emitter.zig:812:                    try self.code.write(member.name);
+  src\hlsl\emitter.zig:813:                }
+  src\hlsl\emitter.zig:814:            },
+  src\hlsl\emitter.zig:815:            .index => |index| {
+  src\hlsl\emitter.zig:816:                if (self.typeOf(index.base).isMatrix()) {
+  src\hlsl\emitter.zig:817:                    return self.fail(index.line, index.column, "matrix indexing is not suppo
+rted", .{});
+  src\hlsl\emitter.zig:818:                }
+  src\hlsl\emitter.zig:819:                try self.emitExprPrec(index.base, 14);
+> src\hlsl\emitter.zig:1216:            .assign => |assign| return self.typeOf(assign.target),
+  src\hlsl\emitter.zig:1217:            .ternary => |ternary| return self.typeOf(ternary.then_expr),
+  src\hlsl\emitter.zig:1218:            .call => |call| return self.callType(call),
+  src\hlsl\emitter.zig:1219:            .member => |member| return self.memberType(member),
+  src\hlsl\emitter.zig:1220:            .index => |index| return self.indexType(index),
+  src\hlsl\emitter.zig:1221:            .comma => |comma| return self.typeOf(comma.right),
+  src\hlsl\emitter.zig:1222:        }
+  src\hlsl\emitter.zig:1223:    }
+  src\hlsl\emitter.zig:1224:
+  src\hlsl\emitter.zig:1225:    fn binaryType(self: *Emitter, binary: ast.Binary) types.Type {
+  src\hlsl\emitter.zig:1226:        const left = self.typeOf(binary.left);
+  src\hlsl\emitter.zig:1227:        const right = self.typeOf(binary.right);
+  src\hlsl\emitter.zig:1228:        switch (binary.op) {
+  src\hlsl\emitter.zig:1229:            .logical_and,
+  src\hlsl\emitter.zig:1230:            .logical_or,
+  src\hlsl\emitter.zig:1231:            .logical_xor,
+  src\hlsl\emitter.zig:1232:            .less,
+  src\hlsl\emitter.zig:1233:            .greater,
+  src\hlsl\emitter.zig:1234:            .less_equal,
+  src\hlsl\emitter.zig:1235:            .greater_equal,
+  src\hlsl\emitter.zig:1236:            .equal,
+  src\hlsl\emitter.zig:1237:            .not_equal,
+  src\hlsl\emitter.zig:1238:            => {
+  src\hlsl\emitter.zig:1239:                const count = componentCount(left);
+  src\hlsl\emitter.zig:1240:                if (count > 1) return .{ .vector = .{ .scalar = .bool, .len = count } };
+  src\hlsl\emitter.zig:1241:                return .{ .scalar = .bool };
+> src\hlsl\emitter.zig:1461:            .assign => |assign| {
+  src\hlsl\emitter.zig:1462:                try self.scanExpr(assign.target);
+  src\hlsl\emitter.zig:1463:                try self.scanExpr(assign.value);
+  src\hlsl\emitter.zig:1464:            },
+  src\hlsl\emitter.zig:1465:            .ternary => |ternary| {
+  src\hlsl\emitter.zig:1466:                try self.scanExpr(ternary.condition);
+  src\hlsl\emitter.zig:1467:                try self.scanExpr(ternary.then_expr);
+  src\hlsl\emitter.zig:1468:                try self.scanExpr(ternary.else_expr);
+  src\hlsl\emitter.zig:1469:            },
+  src\hlsl\emitter.zig:1470:            .call => |call| {
+  src\hlsl\emitter.zig:1471:                if (std.mem.eql(u8, call.callee, "mod")) self.uses_mod = true;
+  src\hlsl\emitter.zig:1472:                for (call.args) |arg| try self.scanExpr(arg);
+  src\hlsl\emitter.zig:1473:            },
+  src\hlsl\emitter.zig:1474:            .member => |member| try self.scanExpr(member.base),
+  src\hlsl\emitter.zig:1475:            .index => |index| {
+  src\hlsl\emitter.zig:1476:                try self.scanExpr(index.base);
+  src\hlsl\emitter.zig:1477:                try self.scanExpr(index.index);
+  src\hlsl\emitter.zig:1478:            },
+  src\hlsl\emitter.zig:1479:            .comma => |comma| {
+  src\hlsl\emitter.zig:1480:                try self.scanExpr(comma.left);
+  src\hlsl\emitter.zig:1481:                try self.scanExpr(comma.right);
+  src\hlsl\emitter.zig:1482:            },
+  src\hlsl\emitter.zig:1483:            else => {},
+  src\hlsl\emitter.zig:1484:        }
+  src\hlsl\emitter.zig:1485:    }
+  src\hlsl\emitter.zig:1486:
+> src\hlsl\emitter.zig:1564:        .assign => |assign| exprReferencesName(assign.target, name) or exprReferencesName(a
+ssign.value, name),
+  src\hlsl\emitter.zig:1565:        .ternary => |ternary| exprReferencesName(ternary.condition, name) or
+  src\hlsl\emitter.zig:1566:            exprReferencesName(ternary.then_expr, name) or exprReferencesName(ternary.else_
+expr, name),
+  src\hlsl\emitter.zig:1567:        .call => |call| blk: {
+  src\hlsl\emitter.zig:1568:            for (call.args) |arg| if (exprReferencesName(arg, name)) break :blk true;
+  src\hlsl\emitter.zig:1569:            break :blk false;
+  src\hlsl\emitter.zig:1570:        },
+  src\hlsl\emitter.zig:1571:        .member => |member| exprReferencesName(member.base, name),
+  src\hlsl\emitter.zig:1572:        .index => |index| exprReferencesName(index.base, name) or exprReferencesName(index.
+index, name),
+  src\hlsl\emitter.zig:1573:        .comma => |comma| exprReferencesName(comma.left, name) or exprReferencesName(comma.
+right, name),
+  src\hlsl\emitter.zig:1574:        else => false,
+  src\hlsl\emitter.zig:1575:    };
+  src\hlsl\emitter.zig:1576:}
+  src\hlsl\emitter.zig:1577:
+  src\hlsl\emitter.zig:1578:fn exprUsesBuiltin(expression: *ast.Expr) bool {
+  src\hlsl\emitter.zig:1579:    return switch (expression.*) {
+  src\hlsl\emitter.zig:1580:        .identifier => |ident| isStageBuiltin(ident.name),
+  src\hlsl\emitter.zig:1581:        .unary => |unary| exprUsesBuiltin(unary.operand),
+  src\hlsl\emitter.zig:1582:        .postfix => |postfix| exprUsesBuiltin(postfix.operand),
+  src\hlsl\emitter.zig:1583:        .binary => |binary| exprUsesBuiltin(binary.left) or exprUsesBuiltin(binary.right),
+> src\hlsl\emitter.zig:1584:        .assign => |assign| exprUsesBuiltin(assign.target) or exprUsesBuiltin(assign.value)
+,
+  src\hlsl\emitter.zig:1585:        .ternary => |ternary| exprUsesBuiltin(ternary.condition) or
+  src\hlsl\emitter.zig:1586:            exprUsesBuiltin(ternary.then_expr) or exprUsesBuiltin(ternary.else_expr),
+  src\hlsl\emitter.zig:1587:        .call => |call| blk: {
+  src\hlsl\emitter.zig:1588:            for (call.args) |arg| if (exprUsesBuiltin(arg)) break :blk true;
+  src\hlsl\emitter.zig:1589:            break :blk false;
+  src\hlsl\emitter.zig:1590:        },
+  src\hlsl\emitter.zig:1591:        .member => |member| exprUsesBuiltin(member.base),
+  src\hlsl\emitter.zig:1592:        .index => |index| exprUsesBuiltin(index.base) or exprUsesBuiltin(index.index),
+  src\hlsl\emitter.zig:1593:        .comma => |comma| exprUsesBuiltin(comma.left) or exprUsesBuiltin(comma.right),
+  src\hlsl\emitter.zig:1594:        else => false,
+  src\hlsl\emitter.zig:1595:    };
+  src\hlsl\emitter.zig:1596:}
+  src\hlsl\emitter.zig:1597:
+  src\hlsl\emitter.zig:1598:fn isStageBuiltin(name: []const u8) bool {
+  src\hlsl\emitter.zig:1599:    return std.mem.eql(u8, name, "gl_Position") or
+  src\hlsl\emitter.zig:1600:        std.mem.eql(u8, name, "gl_FragCoord") or
+  src\hlsl\emitter.zig:1601:        std.mem.eql(u8, name, "gl_FrontFacing") or
+  src\hlsl\emitter.zig:1602:        std.mem.eql(u8, name, "gl_VertexID") or
+  src\hlsl\emitter.zig:1603:        std.mem.eql(u8, name, "gl_InstanceID") or
+  src\hlsl\emitter.zig:1604:        std.mem.eql(u8, name, "gl_FragDepth") or
+  src\hlsl\emitter.zig:1605:        std.mem.eql(u8, name, "gl_FragColor");
+  src\hlsl\emitter.zig:1606:}
+  src\hlsl\emitter.zig:1607:
+  src\hlsl\emitter.zig:1608:fn builtinType(name: []const u8) ?types.Type {
+  src\hlsl\emitter.zig:1609:    if (std.mem.eql(u8, name, "gl_Position") or std.mem.eql(u8, name, "gl_FragCoord") or
+> src\hlsl\emitter.zig:1648:        .assign => 1,
+  src\hlsl\emitter.zig:1649:        .ternary => 2,
+  src\hlsl\emitter.zig:1650:        .binary => |binary| binaryPrecedence(binary.op),
+  src\hlsl\emitter.zig:1651:        .unary => 13,
+  src\hlsl\emitter.zig:1652:        .postfix, .call, .member, .index => 14,
+  src\hlsl\emitter.zig:1653:        else => 15,
+  src\hlsl\emitter.zig:1654:    };
+  src\hlsl\emitter.zig:1655:}
+  src\hlsl\emitter.zig:1656:
+  src\hlsl\emitter.zig:1657:fn binaryPrecedence(op: ast.BinaryOp) u8 {
+  src\hlsl\emitter.zig:1658:    return switch (op) {
+  src\hlsl\emitter.zig:1659:        .logical_or => 3,
+  src\hlsl\emitter.zig:1660:        .logical_and => 4,
+  src\hlsl\emitter.zig:1661:        .bit_or => 5,
+  src\hlsl\emitter.zig:1662:        .bit_xor => 6,
+  src\hlsl\emitter.zig:1663:        .bit_and => 7,
+  src\hlsl\emitter.zig:1664:        .equal, .not_equal => 8,
+  src\hlsl\emitter.zig:1665:        .less, .greater, .less_equal, .greater_equal => 9,
+  src\hlsl\emitter.zig:1666:        .shift_left, .shift_right => 10,
+  src\hlsl\emitter.zig:1667:        .add, .subtract => 11,
+  src\hlsl\emitter.zig:1668:        .multiply, .divide, .remainder => 12,
+  src\hlsl\emitter.zig:1669:        .logical_xor => 8,
+  src\hlsl\emitter.zig:1670:    };
+  src\hlsl\emitter.zig:1671:}
+  src\hlsl\emitter.zig:1672:
+  src\hlsl\emitter.zig:1673:fn binaryOperator(op: ast.BinaryOp) []const u8 {
+> src\hlsl\emitter.zig:1697:fn assignOperator(op: ast.AssignOp) []const u8 {
+  src\hlsl\emitter.zig:1698:    return switch (op) {
+> src\hlsl\emitter.zig:1699:        .assign => "=",
+  src\hlsl\emitter.zig:1700:        .add => "+=",
+  src\hlsl\emitter.zig:1701:        .subtract => "-=",
+  src\hlsl\emitter.zig:1702:        .multiply => "*=",
+  src\hlsl\emitter.zig:1703:        .divide => "/=",
+  src\hlsl\emitter.zig:1704:        .remainder => "%=",
+  src\hlsl\emitter.zig:1705:        .bit_and => "&=",
+  src\hlsl\emitter.zig:1706:        .bit_or => "|=",
+  src\hlsl\emitter.zig:1707:        .bit_xor => "^=",
+  src\hlsl\emitter.zig:1708:        .shift_left => "<<=",
+  src\hlsl\emitter.zig:1709:        .shift_right => ">>=",
+  src\hlsl\emitter.zig:1710:    };
+  src\hlsl\emitter.zig:1711:}
+  src\hlsl\emitter.zig:1712:
+  src\hlsl\emitter.zig:1713:fn componentCount(typ: types.Type) u8 {
+  src\hlsl\emitter.zig:1714:    return typ.componentCount() orelse 1;
+  src\hlsl\emitter.zig:1715:}
+  src\hlsl\emitter.zig:1716:
+  src\hlsl\emitter.zig:1717:fn commonType(left: types.Type, right: types.Type) types.Type {
+  src\hlsl\emitter.zig:1718:    if (left == .unknown) return right;
+  src\hlsl\emitter.zig:1719:    if (right == .unknown) return left;
+  src\hlsl\emitter.zig:1720:    if (left.isMatrix()) return left;
+  src\hlsl\emitter.zig:1721:    if (right.isMatrix()) return right;
+  src\hlsl\emitter.zig:1722:    if (left.isVector() and right.isVector()) {
+  src\hlsl\emitter.zig:1723:        return .{ .vector = .{
+  src\hlsl\emitter.zig:1724:            .scalar = types.commonScalar(left.vector.scalar, right.vector.scalar),
+> src\hlsl\emitter.zig:1902:            .assign => |assign| {
+  src\hlsl\emitter.zig:1903:                try self.scanExpr(assign.target);
+  src\hlsl\emitter.zig:1904:                try self.scanExpr(assign.value);
+  src\hlsl\emitter.zig:1905:            },
+  src\hlsl\emitter.zig:1906:            .ternary => |ternary| {
+  src\hlsl\emitter.zig:1907:                try self.scanExpr(ternary.condition);
+  src\hlsl\emitter.zig:1908:                try self.scanExpr(ternary.then_expr);
+  src\hlsl\emitter.zig:1909:                try self.scanExpr(ternary.else_expr);
+  src\hlsl\emitter.zig:1910:            },
+  src\hlsl\emitter.zig:1911:            .call => |call| for (call.args) |arg| try self.scanExpr(arg),
+  src\hlsl\emitter.zig:1912:            .member => |member| try self.scanExpr(member.base),
+  src\hlsl\emitter.zig:1913:            .index => |index| {
+  src\hlsl\emitter.zig:1914:                try self.scanExpr(index.base);
+  src\hlsl\emitter.zig:1915:                try self.scanExpr(index.index);
+  src\hlsl\emitter.zig:1916:            },
+  src\hlsl\emitter.zig:1917:            .comma => |comma| {
+  src\hlsl\emitter.zig:1918:                try self.scanExpr(comma.left);
+  src\hlsl\emitter.zig:1919:                try self.scanExpr(comma.right);
+  src\hlsl\emitter.zig:1920:            },
+  src\hlsl\emitter.zig:1921:            else => {},
+  src\hlsl\emitter.zig:1922:        }
+  src\hlsl\emitter.zig:1923:    }
+  src\hlsl\emitter.zig:1924:};
+  src\hlsl\emitter.zig:1925:
+  src\hlsl\emitter.zig:1926:test "emit simple vertex shader" {
+  src\hlsl\emitter.zig:1927:    const preprocess = @import("../glsl/preprocess.zig");
+

@@ -1,0 +1,196 @@
+<path>D:\Projects\zig\processor\src\hlsl\emitter.zig</path>
+<type>file</type>
+<content>
+920:                 try self.code.write(" * ");
+921:                 try self.emitExprPrec(call.args[1], 13);
+922:             },
+923:             .compare => {
+924:                 const op = builtins.compareOperator(call.callee).?;
+925:                 if (call.args.len != 2) {
+926:                     return self.fail(call.line, call.column, "'{s}' expects two arguments", .{call.callee});
+927:                 }
+928:                 try self.emitExprPrec(call.args[0], 9);
+929:                 try self.code.print(" {s} ", .{op});
+930:                 try self.emitExprPrec(call.args[1], 10);
+931:             },
+932:             .logical_not => {
+933:                 try self.code.write("!");
+934:                 try self.emitExprPrec(call.args[0], 13);
+935:             },
+936:             .texture, .texture_lod, .texture_grad => try self.emitTextureCall(call, intrinsic),
+937:             .texel_fetch => try self.emitTexelFetch(call),
+938:             .unsupported => return self.fail(call.line, call.column, "intrinsic '{s}' is not supported", .{call.callee}),
+939:         }
+940:     }
+941: 
+942:     fn emitNamedCall(self: *Emitter, name: []const u8, args: []*ast.Expr) Error!void {
+943:         try self.code.print("{s}(", .{name});
+944:         for (args, 0..) |arg, index| {
+945:             if (index > 0) try self.code.write(", ");
+946:             try self.emitExprPrec(arg, 1);
+947:         }
+948:         try self.code.write(")");
+949:     }
+950: 
+951:     fn emitConstructor(self: *Emitter, call: ast.Call, typ: types.Type) Error!void {
+952:         switch (typ) {
+953:             .scalar => {
+954:                 if (call.args.len != 1) {
+955:                     return self.fail(call.line, call.column, "scalar constructor expects one argument", .{});
+956:                 }
+957:                 try self.code.print("{s}(", .{try types.hlslName(self.allocator, typ)});
+958:                 try self.emitExprPrec(call.args[0], 1);
+959:                 try self.code.write(")");
+960:             },
+961:             .vector => |vector| try self.emitVectorConstructor(call, vector),
+962:             .matrix => |matrix| try self.emitMatrixConstructor(call, matrix),
+963:             else => return self.fail(call.line, call.column, "invalid constructor", .{}),
+964:         }
+965:     }
+966: 
+967:     fn emitVectorConstructor(self: *Emitter, call: ast.Call, vector: types.Type.Vector) Error!void {
+968:         const type_name = try types.hlslName(self.allocator, .{ .vector = vector });
+969:         if (call.args.len == 0) {
+970:             return self.fail(call.line, call.column, "vector constructor requires arguments", .{});
+971:         }
+972:         if (call.args.len == 1) {
+973:             const arg_type = self.typeOf(call.args[0]);
+974:             if (arg_type.isMatrix()) {
+975:                 return self.fail(call.line, call.column, "constructing a vector from a matrix is not supported", .{});
+976:             }
+977:             if (arg_type.isVector() and arg_type.vector.len > vector.len) {
+978:                 try self.code.write("(");
+979:                 try self.emitExprPrec(call.args[0], 0);
+980:                 try self.code.print(").{s}", .{swizzlePrefix(vector.len)});
+981:                 return;
+982:             }
+983:             try self.code.print("{s}(", .{type_name});
+984:             if (arg_type.isScalar()) {
+985:                 var index: u8 = 0;
+986:                 while (index < vector.len) : (index += 1) {
+987:                     if (index > 0) try self.code.write(", ");
+988:                     try self.emitExprPrec(call.args[0], 1);
+989:                 }
+990:             } else {
+991:                 try self.emitExprPrec(call.args[0], 1);
+992:             }
+993:             try self.code.write(")");
+994:             return;
+995:         }
+996:         var total: u32 = 0;
+997:         for (call.args) |arg| {
+998:             const arg_type = self.typeOf(arg);
+999:             if (arg_type.isMatrix()) {
+1000:                 return self.fail(call.line, call.column, "matrix arguments in vector constructors are not supported", .{});
+1001:             }
+1002:             total += arg_type.componentCount() orelse 1;
+1003:         }
+1004:         if (total != vector.len) {
+1005:             return self.fail(call.line, call.column, "vector constructor has {d} components, expected {d}", .{ total, vector.len });
+1006:         }
+1007:         try self.code.print("{s}(", .{type_name});
+1008:         for (call.args, 0..) |arg, index| {
+1009:             if (index > 0) try self.code.write(", ");
+1010:             try self.emitExprPrec(arg, 1);
+1011:         }
+1012:         try self.code.write(")");
+1013:     }
+1014: 
+1015:     fn emitMatrixConstructor(self: *Emitter, call: ast.Call, matrix: types.Type.Matrix) Error!void {
+1016:         const type_name = try types.hlslName(self.allocator, .{ .matrix = matrix });
+1017:         if (call.args.len == 1) {
+1018:             const arg_type = self.typeOf(call.args[0]);
+1019:             switch (arg_type) {
+1020:                 .scalar => {
+1021:                     try self.code.print("{s}(", .{type_name});
+1022:                     var r: u32 = 0;
+1023:                     while (r < matrix.rows) : (r += 1) {
+1024:                         var c: u32 = 0;
+1025:                         while (c < matrix.cols) : (c += 1) {
+1026:                             if (r != 0 or c != 0) try self.code.write(", ");
+1027:                             if (r == c) {
+1028:                                 try self.emitExprPrec(call.args[0], 1);
+1029:                             } else {
+1030:                                 try self.code.write("0");
+1031:                             }
+1032:                         }
+1033:                     }
+1034:                     try self.code.write(")");
+1035:                 },
+1036:                 .matrix => |arg_matrix| {
+1037:                     if (arg_matrix.cols == matrix.cols and arg_matrix.rows == matrix.rows) {
+1038:                         try self.emitExprPrec(call.args[0], 1);
+1039:                     } else {
+1040:                         try self.code.print("({s})(", .{type_name});
+1041:                         try self.emitExprPrec(call.args[0], 1);
+1042:                         try self.code.write(")");
+1043:                     }
+1044:                 },
+1045:                 else => return self.fail(call.line, call.column, "unsupported matrix constructor argument", .{}),
+1046:             }
+1047:             return;
+1048:         }
+1049:         if (call.args.len == @as(usize, matrix.cols)) {
+1050:             for (call.args) |arg| {
+1051:                 const arg_type = self.typeOf(arg);
+1052:                 if (!arg_type.isVector() or arg_type.vector.len != matrix.rows) {
+1053:                     return self.fail(call.line, call.column, "matrix constructor columns must be {d}-component vectors", .{matrix.rows});
+1054:                 }
+1055:             }
+1056:             try self.code.print("transpose(float{d}x{d}(", .{ matrix.cols, matrix.rows });
+1057:             for (call.args, 0..) |arg, index| {
+1058:                 if (index > 0) try self.code.write(", ");
+1059:                 try self.emitExprPrec(arg, 1);
+1060:             }
+1061:             try self.code.write("))");
+1062:             return;
+1063:         }
+1064:         if (call.args.len == @as(usize, matrix.cols) * matrix.rows) {
+1065:             for (call.args) |arg| {
+1066:                 if (self.typeOf(arg).componentCount() != 1) {
+1067:                     return self.fail(call.line, call.column, "matrix constructor mixes scalars and vectors", .{});
+1068:                 }
+1069:             }
+1070:             try self.code.print("{s}(", .{type_name});
+1071:             var r: u32 = 0;
+1072:             var first = true;
+1073:             while (r < matrix.rows) : (r += 1) {
+1074:                 var c: u32 = 0;
+1075:                 while (c < matrix.cols) : (c += 1) {
+1076:                     if (!first) try self.code.write(", ");
+1077:                     first = false;
+1078:                     const index = c * matrix.rows + r;
+1079:                     try self.emitExprPrec(call.args[index], 1);
+1080:                 }
+1081:             }
+1082:             try self.code.write(")");
+1083:             return;
+1084:         }
+1085:         return self.fail(call.line, call.column, "matrix constructor has an unsupported number of arguments", .{});
+1086:     }
+1087: 
+1088:     fn emitTextureCall(self: *Emitter, call: ast.Call, intrinsic: builtins.Intrinsic) Error!void {
+1089:         if (call.args.len < 2) {
+1090:             return self.fail(call.line, call.column, "'{s}' requires a sampler and coordinates", .{call.callee});
+1091:         }
+1092:         if (intrinsic == .texture and call.args.len != 2) {
+1093:             return self.fail(call.line, call.column, "texture bias is not supported", .{});
+1094:         }
+1095:         if (self.samplerKindOf(call.args[0]) == null) {
+1096:             return self.fail(call.line, call.column, "texture lookup requires a sampler uniform", .{});
+1097:         }
+1098:         if (self.samplerKindOf(call.args[0]).?.isBuffer()) {
+1099:             return self.fail(call.line, call.column, "texture() is not supported for buffer samplers; use texelFetch", .{});
+1100:         }
+1101:         const object = switch (call.args[0].*) {
+1102:             .identifier => |ident| ident.name,
+1103:             else => return self.fail(call.line, call.column, "texture lookup requires a sampler identifier", .{}),
+1104:         };
+1105:         if (intrinsic == .texture_grad and self.stage == .vertex) {
+1106:             return self.fail(call.line, call.column, "textureGrad is not supported in vertex shaders", .{});
+1107:         }
+1108:         const force_level = intrinsic == .texture and self.stage == .vertex;
+1109:         const method = if (force_level) "SampleLevel" else builtins.hlslName(intrinsic);
+
+(Showing lines 920-1109 of 1935. Use offset=1110 to continue.)
+</content>

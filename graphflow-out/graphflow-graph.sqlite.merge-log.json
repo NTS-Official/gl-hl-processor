@@ -1,0 +1,15 @@
+{
+  "mergedAt": "2026-10-30T03:56:27.100Z",
+  "from": "D:\\Projects\\zig\\processor\\graphflow-out\\graphflow-graph.json",
+  "stats": {
+    "jsonNodes": 2,
+    "jsonEdges": 1,
+    "addedNodes": 2,
+    "updatedNodes": 0,
+    "keptNodes": 0,
+    "skippedCodeNodes": 0,
+    "renumberedTurns": 0,
+    "addedEdges": 1,
+    "droppedEdges": 0
+  }
+}

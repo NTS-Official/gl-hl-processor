@@ -52,7 +52,7 @@ options:
 .\zig-out\bin\glsl2hlsl.exe examples\triangle.vert
 
 # 写入文件，并显式指定阶段
-.\zig-out\bin\glsl2hlsl.exe examples\triangle.frag -s fragment -o out\triangle_ps.hlsl
+.\zig-out\bin\glsl2hlsl.exe examples\triangle.frag -s fragment -o triangle_ps.hlsl
 
 # 从管道读取暂不支持；输入必须是文件路径
 ```

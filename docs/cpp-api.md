@@ -126,7 +126,7 @@ if (status == GLSL2HLSL_STATUS_OK) {
 glsl2hlsl_result_free(&result);
 ```
 
-即使转换失败，也应对 `result` 调用 `glsl2hlsl_result_free`，因为错误诊断同样可能持有内存。`glsl2hlsl_result_free` 会把字段重置为空，重复调用是安全的；对全零结构体调用也安全。
+即使转换失败，也应对 `result` 调用 `glsl2hlsl_result_free`，因为错误诊断同样可能持有内存。`glsl2hlsl_result_free` 会把字段重置为空，重复调用是安全的；对全零结构体调用也安全。对已经持有结果的 `result` 再次调用 `glsl2hlsl_convert` 前，应先调用 `glsl2hlsl_result_free`，否则旧结果会泄漏。
 
 `glsl2hlsl_convert` 返回的 `output` 与 `message` 都在末尾附带 NUL，但长度字段才是权威值；HLSL 文本本身不保证没有内嵌 NUL。
 

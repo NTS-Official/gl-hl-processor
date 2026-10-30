@@ -6,7 +6,7 @@
       "content": "dialogue-session session-3d88cd34-169b-41e1-889b-c60ca22b2d08 turns=3 tip=dialogue:1skb02e:0003",
       "metadata": {
         "kind": "dialogue-session",
-        "record": "{\"id\":\"dialogue-session:1skb02e\",\"name\":\"session-3d88cd34-169b-41e1-889b-c60ca22b2d08\",\"tipTurnId\":\"dialogue:1skb02e:0003\",\"turnCount\":3,\"topicTokens\":[\"17\",\"hlsl的转换器\",\"代码中注释应最少化\",\"先把他构建产物改成库的形式吧\",\"写一个glsl\",\"并提供和cpp的互操作能力\",\"思路可以参考naga\",\"有必要的话允许上网搜索并导入一些库以方便开发\",\"用纯zig\",\"要求不能调用shaderc和spirvcross\",\"说明和用法应该单独放进docs\",\"输出规范\",\"这第一步先实现最基本的转换\"],\"createdAt\":1793332577441,\"updatedAt\":1793334922316}",
+        "record": "{\"id\":\"dialogue-session:1skb02e\",\"name\":\"session-3d88cd34-169b-41e1-889b-c60ca22b2d08\",\"tipTurnId\":\"dialogue:1skb02e:0003\",\"turnCount\":3,\"topicTokens\":[\"17\",\"hlsl的转换器\",\"代码中注释应最少化\",\"先把他构建产物改成库的形式吧\",\"写一个glsl\",\"并提供和cpp的互操作能力\",\"思路可以参考naga\",\"有必要的话允许上网搜索并导入一些库以方便开发\",\"用纯zig\",\"要求不能调用shaderc和spirvcross\",\"说明和用法应该单独放进docs\",\"输出规范\",\"这第一步先实现最基本的转换\"],\"createdAt\":1793332577441,\"updatedAt\":1793335616392}",
         "name": "session-3d88cd34-169b-41e1-889b-c60ca22b2d08"
       }
     },
@@ -37,10 +37,10 @@
     {
       "id": "dialogue:1skb02e:0003",
       "type": "Decision",
-      "content": "dialogue-turn #3 Q: 先把他构建产物改成库的形式吧，并提供和cpp的互操作能力 | A: (pending)",
+      "content": "dialogue-turn #3 Q: 先把他构建产物改成库的形式吧，并提供和cpp的互操作能力 | A: 已完成库化改造，并加入 C++ 互操作。 ## 构建产物 默认 `zig build` 现在只生成库，不再捆绑命令行工具： ```powershell zig build -Doptimize=ReleaseSafe ``` | 产物 | 路径 | | --- | --- | | 静态库 | `zig-out\\lib…",
       "metadata": {
         "kind": "dialogue-turn",
-        "record": "{\"id\":\"dialogue:1skb02e:0003\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":3,\"userQuery\":\"先把他构建产物改成库的形式吧，并提供和cpp的互操作能力\",\"assistantReply\":\"\",\"parentTurnId\":\"dialogue:1skb02e:0002\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793334922316,\"updatedAt\":1793334922316,\"title\":\"先把他构建产物改成库的形式吧\"}",
+        "record": "{\"id\":\"dialogue:1skb02e:0003\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":3,\"userQuery\":\"先把他构建产物改成库的形式吧，并提供和cpp的互操作能力\",\"assistantReply\":\"已完成库化改造，并加入 C++ 互操作。 ## 构建产物 默认 `zig build` 现在只生成库，不再捆绑命令行工具： ```powershell zig build -Doptimize=ReleaseSafe ``` | 产物 | 路径 | | --- | --- | | 静态库 | `zig-out\\\\lib\\\\glsl2hlsl.lib` | | C 头文件 | `zig-out\\\\include\\\\glsl2hlsl\\\\glsl2hlsl.h` | | C++ 头文件 | `zig-out\\\\include\\\\glsl2hlsl\\\\glsl2hlsl.hpp` | 其他构建选项： ```powershell zig build -Dshared=true # DLL + 导入库 zig build -Dcli=true # 同时构建原来的 glsl2hlsl.exe ``` 构建逻辑见 [build.zig](build.zig)。 ## 接口设计 跨编译器边界不直接导出 C++ 类，而是采用 **C ABI + 头文件式 C++ 封装**，避免 STL 和 C++ ABI 绑定。 - C ABI：[src/capi.zig](src/capi.zig)、[glsl2hlsl.h](include/glsl2hlsl/glsl2hlsl.h) - `glsl2hlsl_convert` - `glsl2hlsl_result_free` - `glsl2hlsl_version` - 输出、诊断数组和消息全部由库分配，必须用 `glsl2hlsl_result_free` 释放。 - C++17 封装：[glsl2hlsl.hpp](include/glsl2hlsl/glsl2hlsl.hpp) - `glsl2hlsl::convert` - `glsl2hlsl::Result`，析构时自动释放 C 结果 - `Status` / `Severity` / `Diagnostic` - 不要求调用方处理裸指针。 ```cpp #include <glsl2hlsl/glsl2hlsl.hpp> glsl2hlsl::Result result = glsl2hlsl::convert(source, glsl2hlsl::Stage::Fragment); if (!result) { for (const auto &diagnostic : result.diagnostics) { std::cerr << diagnostic.line << \\\":\\\" << diagnostic.column << \\\": \\\" << diagnostic.message << \\\"\\\\n\\\"; } } else { std::cout << result.output; } ``` 完整说明、C 示例、MSVC/CMake 链接方式见 [docs/cpp-api.md](docs/cpp-api.md)。另外新增了 [C++ 示例](examples/cpp/example.cpp) 和 [互操作测试](tests/cpp/interop_test.cpp)。 ## 验证结果 - `zig build test`：21 个单元测试全部通过，包含 4 个 C ABI 测试。 - `zig build cpp-test`：`cpp interop ok`。 - 严格 C11 消费者：`zig cc -std=c11 -Wall -Wextra -Werror` 编译、链接、运行通过。 - 静态库通过 `zig c++` 手动链接并运行通过。 - `-Dshared=true` 生成 DLL，配合导入库手动链接、运行通过。 - [tests/run.ps1](tests/run.ps1) 全量通过：10 个 GLSL 着色器转换后均通过 `dxc` 的 `vs_6_0` / `ps_6_0` 编译。 现有转换能力、限制和 GLSL→HLSL 映射规则未变，文档已同步更新为“库优先”的用法。\",\"parentTurnId\":\"dialogue:1skb02e:0002\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793334922316,\"updatedAt\":1793335616392,\"title\":\"先把他构建产物改成库的形式吧\",\"summary\":\"已完成库化改造，并加入 C++ 互操作\",\"lastSeenAt\":1793335616392}",
         "seq": 3,
         "sessionId": "dialogue-session:1skb02e",
         "jumped": false

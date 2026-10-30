@@ -126,7 +126,7 @@ GLSL 的入口是 `void main()`，数据通过全局变量传递。HLSL 需要�
 - C ABI 使用整型状态码，不向 C 调用方传播 Zig 错误集。
 - 所有 `output`、诊断数组和 `message` 由库分配，必须用 `glsl2hlsl_result_free` 释放。
 - C++ 封装是头文件式的，构造 `Result` 时复制数据，并在析构 guard 中释放原始 C 结果。
-- 库不依赖 libc；分配使用 Zig 的通用分配器，避免要求调用方匹配 CRT。
+- C ABI 的分配使用 Zig 的通用分配器（`page_allocator`），不要求调用方用同一 CRT 释放内存。
 
 ## 测试策略
 

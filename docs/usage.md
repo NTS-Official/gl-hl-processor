@@ -147,7 +147,7 @@ pub fn convert(
 
 ## 作为 C / C++ 库使用
 
-C ABI 与 C++17 封装的构建、链接、内存管理和完整示例见 [cpp-api.md](cpp-api.md)。
+C ABI 与 C++23 封装的构建、链接、内存管理和完整示例见 [cpp-api.md](cpp-api.md)。
 
 ```cpp
 #include <glsl2hlsl/glsl2hlsl.hpp>

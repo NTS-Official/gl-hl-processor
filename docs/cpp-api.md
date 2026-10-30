@@ -1,6 +1,12 @@
 # C / C++ 接口
 
-转换器现在以库为主要构建产物，同时提供稳定的 C ABI 和头文件式的 C++17 封装。
+转换器现在以库为主要构建产物，同时提供 C ABI 和头文件式的 C++23 封装。
+
+## 语言标准
+
+- C 头文件要求 C23（`__STDC_VERSION__ >= 202311L`）。
+- C++ 封装要求 C++23（`__cplusplus >= 202302L`），并已用 C++26 验证。
+- 使用更低的标准会在包含头文件时触发 `#error`。
 
 ## 构建产物
 
@@ -38,7 +44,7 @@ zig build -Dcli=true -Doptimize=ReleaseSafe
 
 ## C ABI
 
-头文件同时兼容 C11 和 C++17。
+头文件同时兼容 C23 和 C++23。
 
 ### 类型
 
@@ -91,7 +97,7 @@ typedef struct glsl2hlsl_result {
 ### 函数
 
 ```c
-glsl2hlsl_status glsl2hlsl_convert(
+[[nodiscard]] glsl2hlsl_status glsl2hlsl_convert(
     const char *source,
     size_t source_length,
     glsl2hlsl_stage stage,
@@ -116,7 +122,7 @@ const char *glsl2hlsl_version(void);
 `output`、`diagnostics` 数组以及每条诊断的 `message` 都由库分配。调用方不得用 `free()`、`delete` 或自己的分配器释放，必须在不再使用时调用一次 `glsl2hlsl_result_free`：
 
 ```c
-glsl2hlsl_result result;
+glsl2hlsl_result result = {};
 glsl2hlsl_status status = glsl2hlsl_convert(source, strlen(source), GLSL2HLSL_STAGE_FRAGMENT, &result);
 
 if (status == GLSL2HLSL_STATUS_OK) {
@@ -213,14 +219,14 @@ const char *to_string(Severity severity) noexcept;
 ### Zig 自带的 C++ 编译器
 
 ```powershell
-zig c++ -std=c++17 -I zig-out/include examples/cpp/example.cpp `
+zig c++ -std=c++23 -I zig-out/include examples/cpp/example.cpp `
     zig-out/lib/glsl2hlsl.lib -o example.exe
 ```
 
 动态库方式需要让 `example.exe` 能找到 DLL，例如把 `zig-out\bin` 加入 `PATH`，或把 `glsl2hlsl.dll` 复制到可执行文件旁：
 
 ```powershell
-zig c++ -std=c++17 -I zig-out/include examples/cpp/example.cpp `
+zig c++ -std=c++23 -I zig-out/include examples/cpp/example.cpp `
     zig-out/lib/glsl2hlsl.lib -o example.exe
 $env:PATH = "$PWD\zig-out\bin;$env:PATH"
 .\example.exe
@@ -229,10 +235,10 @@ $env:PATH = "$PWD\zig-out\bin;$env:PATH"
 ### MSVC
 
 ```bat
-cl /std:c++17 /I zig-out\include examples\cpp\example.cpp zig-out\lib\glsl2hlsl.lib
+cl /std:c++latest /I zig-out\include examples\cpp\example.cpp zig-out\lib\glsl2hlsl.lib
 ```
 
-静态库是 COFF 格式；若使用动态库，`glsl2hlsl.lib` 是导入库，运行时同样需要 `glsl2hlsl.dll`。
+静态库是 COFF 格式；若使用动态库，`glsl2hlsl.lib` 是导入库，运行时同样需要 `glsl2hlsl.dll`。C++ 封装要求 C++23，MSVC 请使用支持 C++23 的版本并通过 `/std:c++latest` 编译。MSVC 的 C 编译器尚不支持 C23，因此 C 调用请使用 clang 或 GCC。
 
 ### CMake
 
@@ -256,7 +262,8 @@ target_link_libraries(your_target PRIVATE glsl2hlsl)
 
 ```powershell
 zig build test
+zig build c-test
 zig build cpp-test
 ```
 
-`zig build test` 覆盖 Zig 核心、C ABI 的转换、错误诊断与参数校验；`zig build cpp-test` 编译并运行 C++ 互操作测试，检查头文件、链接、结果读取和错误处理。
+`zig build test` 覆盖 Zig 核心与 C ABI 的转换、错误诊断和参数校验；`zig build c-test` 用 C23 编译并运行 C 互操作测试；`zig build cpp-test` 分别用 C++23 和 C++26 编译并运行同一份 C++ 互操作测试，检查头文件、链接、结果读取和错误处理。

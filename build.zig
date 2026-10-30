@@ -56,24 +56,63 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&b.addRunArtifact(exe_tests).step);
     }
 
-    const cpp_mod = b.createModule(.{
+    const c_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    c_mod.addCSourceFile(.{
+        .file = b.path("tests/c/interop_test.c"),
+        .flags = &.{ "-std=c23", "-Wall", "-Wextra", "-Werror" },
+    });
+    c_mod.addIncludePath(b.path("include"));
+
+    const c_test = b.addExecutable(.{
+        .name = "glsl2hlsl_c_test",
+        .root_module = c_mod,
+    });
+    c_test.root_module.linkLibrary(lib);
+
+    const c_step = b.step("c-test", "Build and run the C interoperability test");
+    c_step.dependOn(&b.addRunArtifact(c_test).step);
+
+    const cpp23_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
         .link_libc = true,
         .link_libcpp = true,
     });
-    cpp_mod.addCSourceFile(.{
+    cpp23_mod.addCSourceFile(.{
         .file = b.path("tests/cpp/interop_test.cpp"),
-        .flags = &.{"-std=c++17"},
+        .flags = &.{ "-std=c++23", "-Wall", "-Wextra", "-Werror" },
     });
-    cpp_mod.addIncludePath(b.path("include"));
+    cpp23_mod.addIncludePath(b.path("include"));
 
-    const cpp_test = b.addExecutable(.{
-        .name = "glsl2hlsl_cpp_test",
-        .root_module = cpp_mod,
+    const cpp23_test = b.addExecutable(.{
+        .name = "glsl2hlsl_cpp23_test",
+        .root_module = cpp23_mod,
     });
-    cpp_test.root_module.linkLibrary(lib);
+    cpp23_test.root_module.linkLibrary(lib);
 
-    const cpp_step = b.step("cpp-test", "Build and run the C++ interoperability test");
-    cpp_step.dependOn(&b.addRunArtifact(cpp_test).step);
+    const cpp26_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .link_libcpp = true,
+    });
+    cpp26_mod.addCSourceFile(.{
+        .file = b.path("tests/cpp/interop_test.cpp"),
+        .flags = &.{ "-std=c++26", "-Wall", "-Wextra", "-Werror" },
+    });
+    cpp26_mod.addIncludePath(b.path("include"));
+
+    const cpp26_test = b.addExecutable(.{
+        .name = "glsl2hlsl_cpp26_test",
+        .root_module = cpp26_mod,
+    });
+    cpp26_test.root_module.linkLibrary(lib);
+
+    const cpp_step = b.step("cpp-test", "Build and run the C++ interoperability tests");
+    cpp_step.dependOn(&b.addRunArtifact(cpp23_test).step);
+    cpp_step.dependOn(&b.addRunArtifact(cpp26_test).step);
 }

@@ -126,6 +126,7 @@ GLSL 的入口是 `void main()`，数据通过全局变量传递。HLSL 需要�
 - C ABI 使用整型状态码，不向 C 调用方传播 Zig 错误集。
 - 所有 `output`、诊断数组和 `message` 由库分配，必须用 `glsl2hlsl_result_free` 释放。
 - C++ 封装是头文件式的，构造 `Result` 时复制数据，并在析构 guard 中释放原始 C 结果。
+- 对外头文件要求 C23 / C++23；测试分别用 `-std=c23`、`-std=c++23` 和 `-std=c++26` 编译。
 - C ABI 的分配使用 Zig 的通用分配器（`page_allocator`），不要求调用方用同一 CRT 释放内存。
 
 ## 测试策略
@@ -133,7 +134,8 @@ GLSL 的入口是 `void main()`，数据通过全局变量传递。HLSL 需要�
 - 单元测试覆盖词法、预处理、解析、端到端生成和 C ABI。
 - `tests/shaders/` 覆盖矩阵构造、纹理采样、结构体 uniform、`switch`、传统 GLSL（`varying` / `texture2D` / `gl_FragColor`）、系统内置变量等。
 - `tests/run.ps1` 批量转换，并用 DXC 以 `vs_6_0` / `ps_6_0` 编译生成结果。DXC 只验证语法与语义合法性，不验证渲染结果是否与 GLSL 一致。
-- `tests/cpp/` 通过 `zig build cpp-test` 编译并运行，验证 C++ 头文件、链接、结果读取和错误处理。
+- `tests/c/` 通过 `zig build c-test` 用 C23 编译并运行，验证 C ABI、链接和诊断读取。
+- `tests/cpp/` 通过 `zig build cpp-test` 分别用 C++23 与 C++26 编译并运行，验证 C++ 头文件、链接、结果读取和错误处理。
 - 输入 GLSL 可用 `glslangValidator` 单独校验。
 
 ## 后续计划

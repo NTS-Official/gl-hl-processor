@@ -6,7 +6,7 @@
 namespace {
 
 bool contains(std::string_view text, std::string_view needle) {
-    return text.find(needle) != std::string_view::npos;
+    return text.contains(needle);
 }
 
 void print_diagnostics(const glsl2hlsl::Result &result) {

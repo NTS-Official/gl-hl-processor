@@ -16,6 +16,9 @@ try {
     zig build test -Dcli=true
     if ($LASTEXITCODE -ne 0) { throw 'unit tests failed' }
 
+    zig build c-test
+    if ($LASTEXITCODE -ne 0) { throw 'C interop test failed' }
+
     zig build cpp-test
     if ($LASTEXITCODE -ne 0) { throw 'C++ interop test failed' }
 

@@ -4,6 +4,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(__cplusplus)
+#  if (defined(_MSVC_LANG) && _MSVC_LANG < 202302L) || (!defined(_MSVC_LANG) && __cplusplus < 202302L)
+#    error "glsl2hlsl requires C++23 or newer"
+#  endif
+#elif !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
+#error "glsl2hlsl requires C23 or newer"
+#endif
+
 #if defined(_WIN32) && defined(GLSL2HLSL_BUILD_DLL)
 #define GLSL2HLSL_API __declspec(dllexport)
 #else
@@ -48,7 +56,7 @@ typedef struct glsl2hlsl_result {
     size_t diagnostic_count;
 } glsl2hlsl_result;
 
-GLSL2HLSL_API glsl2hlsl_status glsl2hlsl_convert(
+[[nodiscard]] GLSL2HLSL_API glsl2hlsl_status glsl2hlsl_convert(
     const char *source,
     size_t source_length,
     glsl2hlsl_stage stage,

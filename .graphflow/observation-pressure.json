@@ -2,11 +2,11 @@
   "sessions": {
     "session-3d88cd34-169b-41e1-889b-c60ca22b2d08": {
       "sessionId": "session-3d88cd34-169b-41e1-889b-c60ca22b2d08",
-      "rawBytes": 734281,
-      "visibleBytes": 613298,
-      "observations": 502,
-      "usedTokensEstimate": 153325,
-      "updatedAt": "2026-10-30T04:46:42.823Z"
+      "rawBytes": 776278,
+      "visibleBytes": 655295,
+      "observations": 562,
+      "usedTokensEstimate": 163824,
+      "updatedAt": "2026-10-30T05:01:17.540Z"
     }
   }
 }

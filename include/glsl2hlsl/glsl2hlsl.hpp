@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace glsl2hlsl {
@@ -40,8 +41,8 @@ struct Result {
     std::string output;
     std::vector<Diagnostic> diagnostics;
 
-    bool ok() const noexcept { return status == Status::Ok; }
-    explicit operator bool() const noexcept { return ok(); }
+    [[nodiscard]] bool ok() const noexcept { return status == Status::Ok; }
+    [[nodiscard]] explicit operator bool() const noexcept { return ok(); }
 };
 
 inline const char *to_string(Status status) noexcept {
@@ -82,13 +83,13 @@ struct ResultOwner {
 
 }
 
-inline Result convert(std::string_view source, Stage stage = Stage::Auto) {
+[[nodiscard]] inline Result convert(std::string_view source, Stage stage = Stage::Auto) {
     detail::ResultOwner owner;
     const char *data = source.empty() ? "" : source.data();
     const glsl2hlsl_status status = glsl2hlsl_convert(
         data,
         source.size(),
-        static_cast<glsl2hlsl_stage>(stage),
+        static_cast<glsl2hlsl_stage>(std::to_underlying(stage)),
         &owner.value);
 
     Result result;
@@ -112,7 +113,7 @@ inline Result convert(std::string_view source, Stage stage = Stage::Auto) {
     return result;
 }
 
-inline const char *version() noexcept {
+[[nodiscard]] inline const char *version() noexcept {
     return glsl2hlsl_version();
 }
 

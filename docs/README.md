@@ -1,5 +1,7 @@
 # glsl2hlsl
 
+[English README](../README.md) | [中文 README](../README_zh.md)
+
 纯 Zig（0.17.0）实现的 GLSL 到 HLSL 转换库。当前为第一阶段：覆盖常见顶点/片元着色器的最基本转换。
 
 转换器不调用 shaderc、glslang 或 SPIRV-Cross，也不经过 SPIR-V。实现方式参考 naga 的前端思路：先做预处理与词法分析，再建立 GLSL 语法树，最后直接生成 HLSL 源码。
@@ -7,6 +9,7 @@
 ## 当前能力
 
 - 顶点着色器与片元着色器。
+- C23 头文件、C++23 头文件封装，并用 C++26 验证。
 - `#version`、对象式 `#define`、`#ifdef` / `#if` / `#elif` / `#else` / `#endif` 等常用预处理指令。
 - 标量、向量、矩阵、结构体、数组、函数、控制流。
 - 非采样器 uniform 汇总到一个 `cbuffer Globals : register(b0)`。
@@ -22,7 +25,7 @@
 zig build -Doptimize=ReleaseSafe
 ```
 
-默认生成静态库 `zig-out\lib\glsl2hlsl.lib` 与 `zig-out\include\glsl2hlsl\` 下的 C/C++ 头文件。
+默认生成静态库 `zig-out\lib\glsl2hlsl.lib` 与 `zig-out\include\glsl2hlsl\` 下的 C23/C++23 头文件。
 
 ```cpp
 #include <glsl2hlsl/glsl2hlsl.hpp>
@@ -68,11 +71,12 @@ dxc -T ps_6_0 -E main triangle_ps.hlsl
 | `src/converter.zig` | 预处理 → 词法 → 语法 → 生成的流水线 |
 | `src/capi.zig` | C ABI、结果内存与诊断的生命周期 |
 | `src/main.zig` | 命令行入口 |
-| `include/glsl2hlsl/` | C 头文件与 C++17 封装 |
+| `include/glsl2hlsl/` | C23 头文件与 C++23 封装 |
 | `examples/` | 示例 GLSL、生成结果与 C++ 调用示例 |
 | `tests/shaders/` | 回归测试用着色器 |
-| `tests/cpp/` | C++ 互操作测试 |
-| `tests/run.ps1` | 批量转换并用 DXC 验证 |
+| `tests/c/` | C23 互操作测试 |
+| `tests/cpp/` | C++23/C++26 互操作测试 |
+| `tests/run.ps1` | 运行测试并批量转换、用 DXC 验证 |
 
 ## 文档索引
 
@@ -85,6 +89,7 @@ dxc -T ps_6_0 -E main triangle_ps.hlsl
 
 ```powershell
 zig build test
+zig build c-test
 zig build cpp-test
 powershell -ExecutionPolicy Bypass -File tests\run.ps1
 ```

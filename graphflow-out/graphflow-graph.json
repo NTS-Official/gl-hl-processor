@@ -3,10 +3,10 @@
     {
       "id": "dialogue-session:1skb02e",
       "type": "Decision",
-      "content": "dialogue-session session-3d88cd34-169b-41e1-889b-c60ca22b2d08 turns=3 tip=dialogue:1skb02e:0003",
+      "content": "dialogue-session session-3d88cd34-169b-41e1-889b-c60ca22b2d08 turns=4 tip=dialogue:1skb02e:0004",
       "metadata": {
         "kind": "dialogue-session",
-        "record": "{\"id\":\"dialogue-session:1skb02e\",\"name\":\"session-3d88cd34-169b-41e1-889b-c60ca22b2d08\",\"tipTurnId\":\"dialogue:1skb02e:0003\",\"turnCount\":3,\"topicTokens\":[\"17\",\"hlsl的转换器\",\"代码中注释应最少化\",\"先把他构建产物改成库的形式吧\",\"写一个glsl\",\"并提供和cpp的互操作能力\",\"思路可以参考naga\",\"有必要的话允许上网搜索并导入一些库以方便开发\",\"用纯zig\",\"要求不能调用shaderc和spirvcross\",\"说明和用法应该单独放进docs\",\"输出规范\",\"这第一步先实现最基本的转换\"],\"createdAt\":1793332577441,\"updatedAt\":1793335616392}",
+        "record": "{\"id\":\"dialogue-session:1skb02e\",\"name\":\"session-3d88cd34-169b-41e1-889b-c60ca22b2d08\",\"tipTurnId\":\"dialogue:1skb02e:0004\",\"turnCount\":4,\"topicTokens\":[\"17\",\"23\",\"26\",\"hlsl的转换器\",\"两个文档互联\",\"中文的放readme_zh里\",\"代码中注释应最少化\",\"先把他构建产物改成库的形式吧\",\"写一个glsl\",\"并提供和cpp的互操作能力\",\"思路可以参考naga\",\"把风格标准提到c23和c\",\"有必要的话允许上网搜索并导入一些库以方便开发\",\"然后默认readme做成英文的\",\"用纯zig\",\"要求不能调用shaderc和spirvcross\",\"说明和用法应该单独放进docs\",\"输出规范\",\"这第一步先实现最基本的转换\"],\"createdAt\":1793332577441,\"updatedAt\":1793336490599}",
         "name": "session-3d88cd34-169b-41e1-889b-c60ca22b2d08"
       }
     },
@@ -45,6 +45,18 @@
         "sessionId": "dialogue-session:1skb02e",
         "jumped": false
       }
+    },
+    {
+      "id": "dialogue:1skb02e:0004",
+      "type": "Decision",
+      "content": "dialogue-turn #4 Q: 把风格标准提到C23和C++23/26，然后默认readme做成英文的，中文的放readme_zh里（两个文档互联） | A: **标准提升** - C 头文件现在要求 C23，C++ 封装要求 C++23，并额外用 C++26 验证。 - 这些标准要求在 [glsl2hlsl.h](include/glsl2hlsl/glsl2hlsl.h#L7-L13) 中用 `#error` 强制执行，不再只写在文档里；同时兼容 MSVC 的 `_MS…",
+      "metadata": {
+        "kind": "dialogue-turn",
+        "record": "{\"id\":\"dialogue:1skb02e:0004\",\"sessionId\":\"dialogue-session:1skb02e\",\"seq\":4,\"userQuery\":\"把风格标准提到C23和C++23/26，然后默认readme做成英文的，中文的放readme_zh里（两个文档互联）\",\"assistantReply\":\"**标准提升** - C 头文件现在要求 C23，C++ 封装要求 C++23，并额外用 C++26 验证。 - 这些标准要求在 [glsl2hlsl.h](include/glsl2hlsl/glsl2hlsl.h#L7-L13) 中用 `#error` 强制执行，不再只写在文档里；同时兼容 MSVC 的 `_MSVC_LANG`，避免 MSVC 默认 `__cplusplus` 值导致误报。 - C++ 封装开始使用 C++23 的 `std::to_underlying` 和 `std::string_view::contains`，相关接口加了 `[[nodiscard]]`。 - 新增 [tests/c/interop_test.c](tests/c/interop_test.c)，C 测试使用 C23 的 `nullptr` 和 `= {}` 初始化。 **README 双语化** - [README.md](README.md) 改为默认英文版。 - [README_zh.md](README_zh.md) 为中文版，两个文件顶部互相链接。 - 同步更新了 [docs/README.md](docs/README.md)、[docs/cpp-api.md](docs/cpp-api.md)、[docs/usage.md](docs/usage.md)、[docs/design.md](docs/design.md) 中的标准、构建和测试说明。 - [docs/cpp-api.md](docs/cpp-api.md) 增加了“语言标准”一节，并补充 C23/C++23 的链接示例、MSVC 说明和 C23 所有权示例。 **构建与测试** - [build.zig](build.zig) 新增 `c-test`，`cpp-test` 现在分别用 `-std=c++23` 和 `-std=c++26` 编译并运行同一份互操作测试。 - [tests/run.ps1](tests/run.ps1) 会依次运行 `test`、`c-test`、`cpp-test`，再做 10 个着色器的 DXC 验证。 - 清理并重新构建后，默认产物只有： - `zig-out/lib/glsl2hlsl.lib` - `zig-out/include/glsl2hlsl/glsl2hlsl.h` - `zig-out/include/glsl2hlsl/glsl2hlsl.hpp` 验证结果：21 个 Zig 测试通过，`c interop ok`，`cpp interop ok` 两次，`zig c++ -std=c++23`、`zig c++ -std=c++26`、`zig cc -std=c23` 均可链接运行；用 C17/C++17 包含头文件会按预期触发 `#error`；`tests/run.ps1` 的 10 个着色器全部通过 DXC。\",\"parentTurnId\":\"dialogue:1skb02e:0003\",\"jumped\":false,\"relatedNodeIds\":[],\"createdAt\":1793336191099,\"updatedAt\":1793336490599,\"title\":\"把风格标准提到C23和C++23/26\",\"summary\":\"**标准提升** - C 头文件现在要求 C23，C++ 封装要求 C++23，并额外用 C++26 验证。 - 这些标准要求在 [glsl2hlsl.h](include/glsl2hlsl/glsl2hlsl.h#L7-L13) 中用 `#error` 强制执行，不再只写在文档里；同时兼容 MSVC 的 `_MSVC_LANG`，避免 MSVC 默认 `__cplusplus` 值导致误报。…\",\"lastSeenAt\":1793336490599}",
+        "seq": 4,
+        "sessionId": "dialogue-session:1skb02e",
+        "jumped": false
+      }
     }
   ],
   "edges": [
@@ -71,6 +83,16 @@
     {
       "from": "dialogue:1skb02e:0002",
       "to": "dialogue:1skb02e:0003",
+      "relation": "next_section"
+    },
+    {
+      "from": "dialogue:1skb02e:0004",
+      "to": "dialogue-session:1skb02e",
+      "relation": "part_of"
+    },
+    {
+      "from": "dialogue:1skb02e:0003",
+      "to": "dialogue:1skb02e:0004",
       "relation": "next_section"
     }
   ]

@@ -1,3 +1,6 @@
+> [!Caution]
+> 这是一个**纯-vibe**项目，不要对它抱有太高的期待。如果你真的想要这么做，还是老老实实去研究`wgpu`的`naga`吧。
+
 # glsl2hlsl
 
 [English](README.md) | [简体中文](README_zh.md)

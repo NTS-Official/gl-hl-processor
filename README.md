@@ -1,3 +1,6 @@
+> [!Caution]
+> This is a **pure-vibed** project, so don't have too high expectations for it. If you really need it, it's better to just honestly use SPIR-V as an intermediate.
+
 # glsl2hlsl
 
 [English](README.md) | [简体中文](README_zh.md)
